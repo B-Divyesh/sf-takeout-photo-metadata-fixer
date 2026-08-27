@@ -8,7 +8,6 @@ self.addEventListener('install', (event) => {
       if (!response.ok) throw new Error(`Could not precache ${url}`);
       await cache.put(url, response);
     }));
-    await self.skipWaiting();
   }));
 });
 
@@ -28,4 +27,8 @@ self.addEventListener('fetch', (event) => {
     if (response.ok) caches.open(VERSION).then((cache) => cache.put(event.request, response.clone()));
     return response;
   })));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') void self.skipWaiting();
 });

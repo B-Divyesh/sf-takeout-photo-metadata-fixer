@@ -43,30 +43,45 @@ export function parseSidecar(raw: unknown): PhotoMetadata {
   const timestampRaw = taken?.timestamp ?? created?.timestamp;
   const timestamp = timestampRaw === undefined ? undefined : Number(timestampRaw);
 
-  const geoExif = json.geoDataExif as Record<string, unknown> | undefined;
-  const geo = json.geoData as Record<string, unknown> | undefined;
-  const location = geoExif && hasCoordinates(geoExif) ? geoExif : geo;
-  const latitude = numberOrUndefined(location?.latitude);
-  const longitude = numberOrUndefined(location?.longitude);
-  const altitude = numberOrUndefined(location?.altitude);
+  const geoExif = recordOrUndefined(json.geoDataExif);
+  const geo = recordOrUndefined(json.geoData);
+  // Takeout frequently includes an empty or partial geoDataExif object next
+  // to populated geoData. Prefer EXIF values where they exist, but never let
+  // an absent field hide the corresponding populated geoData field.
+  const exifCoordinates = coordinatesFrom(geoExif);
+  const geoCoordinates = coordinatesFrom(geo);
+  const latitude = exifCoordinates.latitude ?? geoCoordinates.latitude;
+  const longitude = exifCoordinates.longitude ?? geoCoordinates.longitude;
+  const hasLocation = latitude !== undefined && longitude !== undefined && (latitude !== 0 || longitude !== 0);
+  const altitude = hasLocation ? numberOrUndefined(geoExif?.altitude) ?? numberOrUndefined(geo?.altitude) : undefined;
 
   return {
     timestamp: Number.isFinite(timestamp) && timestamp! > 0 ? timestamp : undefined,
-    latitude: latitude !== 0 || longitude !== 0 ? latitude : undefined,
-    longitude: latitude !== 0 || longitude !== 0 ? longitude : undefined,
-    altitude: altitude !== 0 ? altitude : undefined,
+    latitude: hasLocation ? latitude : undefined,
+    longitude: hasLocation ? longitude : undefined,
+    altitude,
     title: typeof json.title === 'string' ? json.title : undefined,
     description: typeof json.description === 'string' ? json.description : undefined
   };
 }
 
+function recordOrUndefined(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+}
+
 function numberOrUndefined(value: unknown): number | undefined {
+  if (value === null || value === '' || value === undefined) return undefined;
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
 }
 
-function hasCoordinates(value: Record<string, unknown>) {
-  return Number(value.latitude) !== 0 || Number(value.longitude) !== 0;
+function coordinatesFrom(value?: Record<string, unknown>) {
+  const latitude = numberOrUndefined(value?.latitude);
+  const longitude = numberOrUndefined(value?.longitude);
+  // Google uses 0/0 for its no-location placeholder. Treat the pair as
+  // missing so a populated geoData object can provide the real location.
+  if (latitude === 0 && longitude === 0) return { latitude: undefined, longitude: undefined };
+  return { latitude, longitude };
 }
 
 async function parseSidecarFile(source: SourceFile) {

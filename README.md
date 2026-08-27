@@ -41,7 +41,7 @@ The reproducible production command is `npm run build`. Static output lands in `
 
 ## Deploy
 
-Deploy `dist/` as a static site with SPA fallback to `index.html`. The checked-in `/privacy/`, `/terms/`, offline page, manifest, icons, and service worker are copied into that directory by Vite.
+Deploy `dist/` as a static site with SPA fallback to `index.html`. The checked-in `/privacy/`, `/terms/`, offline page, manifest, icons, and service worker are copied into that directory by Vite. The build also generates `dist/staticwebapp.config.json` for Standard Static Web Apps: it sends the CSP, clickjacking, Permissions-Policy, manifest MIME type, service-worker cache policy, and immutable cache headers for Vite-hashed assets.
 
 For the factory container deployment, build and run the included multi-stage image. It serves `dist/` on port 8080 as an unprivileged user, preserves SPA routes and service-worker behavior, sets immutable cache headers only for fingerprinted bundles, and sends `no-store` for HTML, the manifest, and the service worker.
 

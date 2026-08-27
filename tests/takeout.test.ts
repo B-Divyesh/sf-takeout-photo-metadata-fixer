@@ -16,6 +16,20 @@ describe('Google Takeout sidecars', () => {
     });
   });
 
+  it('falls back field-by-field when geoDataExif is empty or partial', () => {
+    expect(parseSidecar({
+      photoTakenTime: { timestamp: '1600000000' },
+      geoDataExif: {},
+      geoData: { latitude: 51.5, longitude: -0.12, altitude: 16 }
+    })).toMatchObject({ latitude: 51.5, longitude: -0.12, altitude: 16 });
+
+    expect(parseSidecar({
+      photoTakenTime: { timestamp: '1600000000' },
+      geoDataExif: { latitude: 51.5 },
+      geoData: { latitude: 1, longitude: -0.12, altitude: 16 }
+    })).toMatchObject({ latitude: 51.5, longitude: -0.12, altitude: 16 });
+  });
+
   it('treats zero coordinates as missing', () => {
     expect(parseSidecar({ creationTime: { timestamp: '1600000000' }, geoData: { latitude: 0, longitude: 0, altitude: 0 } })).toEqual({
       timestamp: 1600000000, latitude: undefined, longitude: undefined, altitude: undefined, title: undefined, description: undefined

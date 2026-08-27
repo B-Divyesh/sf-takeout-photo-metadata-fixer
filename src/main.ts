@@ -27,6 +27,9 @@ let licensed = hasLargeLibraryLicense();
 let completedMessage = '';
 let errorMessage = '';
 let lastProgressPaint = 0;
+let waitingWorker: ServiceWorker | undefined;
+let reloadAfterUpdate = false;
+let toastTimer: number | undefined;
 
 const icon = (name: 'folder' | 'zip' | 'shield' | 'arrow' | 'check' | 'warning' | 'download' | 'photo') => {
   const paths = {
@@ -341,15 +344,50 @@ async function uploadSettings(event: Event) {
 }
 
 function showError(error: unknown) { scanning = false; progress = undefined; errorMessage = error instanceof Error ? error.message : 'An unexpected browser error occurred.'; render(); }
-function showToast(message: string) { const toast = document.querySelector<HTMLElement>('#toast'); if (!toast) return; toast.textContent = message; toast.hidden = false; setTimeout(() => { toast.hidden = true; }, 6000); }
+function showToast(message: string, action?: { label: string; run: () => void }) {
+  const toast = document.querySelector<HTMLElement>('#toast');
+  if (!toast) return;
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toast.replaceChildren(document.createTextNode(message));
+  if (action) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'toast-action'; button.textContent = action.label;
+    button.addEventListener('click', action.run);
+    toast.append(' ', button);
+  }
+  toast.hidden = false;
+  if (!action) toastTimer = window.setTimeout(() => { toast.hidden = true; }, 6000);
+}
+
+function showUpdateToast(worker: ServiceWorker) {
+  if (waitingWorker === worker) return;
+  waitingWorker = worker;
+  showToast('A new version is ready.', {
+    label: 'Reload now',
+    run: () => {
+      reloadAfterUpdate = true;
+      showToast('Updating Takeout Tidy…');
+      worker.postMessage({ type: 'SKIP_WAITING' });
+    }
+  });
+}
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   try {
     const registration = await navigator.serviceWorker.register('/sw.js');
+    const notifyIfWaiting = () => {
+      // A waiting worker is deliberately retained until the person using the
+      // app accepts it, so an in-progress local repair is never interrupted.
+      if (registration.waiting && navigator.serviceWorker.controller) showUpdateToast(registration.waiting);
+    };
+    notifyIfWaiting();
     registration.addEventListener('updatefound', () => {
       const worker = registration.installing;
-      worker?.addEventListener('statechange', () => { if (worker.state === 'installed' && navigator.serviceWorker.controller) showToast('An update is ready. Reload to use it.'); });
+      worker?.addEventListener('statechange', () => { if (worker.state === 'installed') notifyIfWaiting(); });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadAfterUpdate) window.location.reload();
     });
   } catch { /* The app still works without offline installation. */ }
 }

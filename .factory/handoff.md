@@ -1,5 +1,27 @@
 # Repair handoff — Takeout Tidy
 
+## Independent verifier status: PASS
+
+Verified on 2026-08-27 for work order `takeout-photo-metadata-fixer-verify-2`.
+
+- Tested candidate: `252dc2bdf50f01daf19b9ac999335e3cc535a3c7`
+- Tested live URL: <https://takeout-photo-metadata-fixer.sociobot.in/>
+- Result: **PASS** — no critical, high, or medium severity release defect was
+  found. The live user-facing build is byte-identical to the candidate output.
+- Fresh verification passed `npm ci`, 12/12 unit tests, production build,
+  10/10 Playwright desktop/mobile tests, live mixed-ZIP repair and recovery,
+  large-library gate, offline reload, update toast, 390 px layout, keyboard
+  focus, reduced motion, axe serious/critical checks, privacy/network checks,
+  response headers/caching, and live mobile Lighthouse (99 Performance, 100
+  Accessibility, 100 Best Practices, 100 SEO; LCP 1.6 s, CLS 0).
+- Known test note: on a brand-new machine, run `npx playwright install
+  chromium` before `npm run test:e2e`; `npm ci` does not install browser
+  executables.
+
+See [`.factory/verification.md`](verification.md) for commands, evidence,
+defects by severity, tested cases, and known product limits. The historical
+repair notes below describe the builder's preceding repair work.
+
 Date: 2026-08-27
 Work order: `takeout-photo-metadata-fixer-repair-1`
 Commit: `b3b5fa3` (`fix: preserve Takeout GPS and harden static PWA`)

@@ -2,7 +2,7 @@ import './styles.css';
 import { BUY_URL, hasLargeLibraryLicense, verifyLicense } from './license';
 import { exportToDirectory, exportToZip, type DirectoryHandleLike } from './exporter';
 import { exportPreferences, importPreferences, loadOptions, loadSession, saveOptions, saveSession } from './storage';
-import { filesFromDirectory, filesFromInput, filesFromZips, scanSources } from './takeout';
+import { filesFromDataTransfer, filesFromDirectory, filesFromInput, filesFromZips, scanSources } from './takeout';
 import type { ProgressUpdate, RepairOptions, ScanResult, SessionSummary, SourceFile, SourceKind } from './types';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -26,6 +26,7 @@ let query = '';
 let licensed = hasLargeLibraryLicense();
 let completedMessage = '';
 let errorMessage = '';
+let lastProgressPaint = 0;
 
 const icon = (name: 'folder' | 'zip' | 'shield' | 'arrow' | 'check' | 'warning' | 'download' | 'photo') => {
   const paths = {
@@ -79,8 +80,8 @@ function render() {
         </div>
         <figure class="hero-art">
           <picture>
-            <source srcset="/assets/hero-paper-archive.webp" type="image/webp" />
-            <img src="/assets/hero-paper-archive.png" width="768" height="512" alt="Paper-cut photo prints and sidecar cards moving through an archive sorter into a neat stack" fetchpriority="high" decoding="async" />
+            <source srcset="/assets/hero-paper-archive-640.webp 640w, /assets/hero-paper-archive.webp 1024w" sizes="(max-width: 850px) calc(100vw - 28px), 52vw" type="image/webp" />
+            <img src="/assets/hero-paper-archive.jpg" width="1024" height="683" alt="Paper-cut photo prints and sidecar cards moving through an archive sorter into a neat stack" fetchpriority="high" decoding="async" />
           </picture>
           <figcaption>Loose Takeout files in. A dated, deduplicated archive out.</figcaption>
         </figure>
@@ -125,10 +126,10 @@ function chooserView() {
       <button class="source-choice" id="choose-zips" ${scanning ? 'disabled' : ''}>
         <span class="source-icon zip">${icon('zip')}</span><span><strong>Choose Takeout ZIPs</strong><small>Works in every modern browser</small></span>${icon('arrow')}
       </button>
-      <input id="folder-input" class="visually-hidden" type="file" webkitdirectory multiple />
-      <input id="zip-input" class="visually-hidden" type="file" accept=".zip,application/zip" multiple />
+      <input id="folder-input" class="visually-hidden" type="file" webkitdirectory multiple aria-label="Choose extracted Takeout folder" />
+      <input id="zip-input" class="visually-hidden" type="file" accept=".zip,application/zip" multiple aria-label="Choose Takeout ZIP files" />
     </div>
-    <div class="drop-zone" id="drop-zone" tabindex="0" role="button" aria-label="Drop Takeout ZIP files or a folder here">${icon('download')}<span>Or drag a folder / ZIPs onto this paper</span></div>
+    <div class="drop-zone" id="drop-zone" tabindex="0" role="button">${icon('download')}<span>Or drag a folder or ZIP files onto this paper</span></div>
     ${progress ? progressView() : ''}
     ${errorMessage ? `<div class="notice error" role="alert">${icon('warning')}<div><strong>We could not scan that source.</strong><p>${escapeHtml(errorMessage)}</p></div></div>` : ''}
     <p class="support-note"><strong>Supported repair:</strong> JPEG and PNG date + GPS. HEIC, HEIF, and video are included unchanged and clearly marked. No pixel data is re-encoded.</p>
@@ -180,7 +181,7 @@ function resultsView() {
           <button class="button primary wide" type="button" id="export-folder" ${overLimit || !scan!.mediaCount || progress ? 'disabled' : ''}>${icon('folder')} Write to a folder</button>
           <button class="button secondary wide" type="button" id="export-zip" ${overLimit || !scan!.mediaCount || progress ? 'disabled' : ''}>${icon('download')} Download ZIP</button>
         </div>
-        <p class="recipe-note">A JSON manifest is included so you can audit every match, skip, and error.</p>
+        <p class="recipe-note">Folder export creates a new timestamped subfolder, so originals are never overwritten. A JSON manifest records every match, skip, and error.</p>
       </form>
     </div>
     ${progress ? progressView() : ''}
@@ -214,9 +215,14 @@ function bind() {
   drop?.addEventListener('dragleave', () => drop.classList.remove('dragging'));
   drop?.addEventListener('drop', async (event) => {
     event.preventDefault(); drop.classList.remove('dragging');
-    const files = [...event.dataTransfer!.files];
+    const transfer = event.dataTransfer!;
+    const files = [...transfer.files];
     if (files.length && files.every((file) => file.name.toLowerCase().endsWith('.zip'))) await scanZips(files);
-    else if (files.length) await beginScan(await filesFromInput(files), 'files', 'Dropped files');
+    else {
+      const dropped = await filesFromDataTransfer(transfer.items);
+      if (dropped.length) await beginScan(dropped, 'files', dropped[0].path.split('/')[0] || 'Dropped files');
+      else if (files.length) await beginScan(await filesFromInput(files), 'files', 'Dropped files');
+    }
   });
   drop?.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.querySelector<HTMLButtonElement>('#choose-zips')?.click(); } });
   document.querySelector('#start-over')?.addEventListener('click', () => { scan = undefined; progress = undefined; completedMessage = ''; errorMessage = ''; render(); location.hash = 'repair'; });
@@ -263,7 +269,14 @@ async function beginScan(files: SourceFile[], sourceKind: SourceKind, sourceLabe
   scanning = false; progress = undefined; render(); location.hash = 'repair';
 }
 
-function updateProgress(update: ProgressUpdate) { progress = update; render(); }
+function updateProgress(update: ProgressUpdate) {
+  progress = update;
+  const now = performance.now();
+  if (update.current === update.total || now - lastProgressPaint > 120) {
+    lastProgressPaint = now;
+    render();
+  }
+}
 
 function updateOptions(event: Event) {
   const form = event.currentTarget as HTMLFormElement;
@@ -281,7 +294,9 @@ async function exportFolder() {
   try {
     if (!('showDirectoryPicker' in window)) { await exportZip(); return; }
     const root = await (window as Window & { showDirectoryPicker(options?: { mode?: string }): Promise<DirectoryHandleLike> }).showDirectoryPicker({ mode: 'readwrite' });
-    const result = await exportToDirectory(scan, options, root, updateProgress);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const destination = await root.getDirectoryHandle(`Takeout Tidy clean ${stamp}`, { create: true });
+    const result = await exportToDirectory(scan, options, destination, updateProgress);
     finishExport(result.written, result.skippedDuplicates, result.failed.length);
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') { progress = undefined; render(); return; }

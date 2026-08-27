@@ -197,6 +197,48 @@ export async function filesFromInput(fileList: FileList | File[]): Promise<Sourc
   });
 }
 
+interface LegacyFileEntry {
+  isFile: true;
+  isDirectory: false;
+  name: string;
+  fullPath: string;
+  file(success: (file: File) => void, failure?: (error: DOMException) => void): void;
+}
+
+interface LegacyDirectoryEntry {
+  isFile: false;
+  isDirectory: true;
+  name: string;
+  fullPath: string;
+  createReader(): { readEntries(success: (entries: LegacyEntry[]) => void, failure?: (error: DOMException) => void): void };
+}
+
+type LegacyEntry = LegacyFileEntry | LegacyDirectoryEntry;
+
+export async function filesFromDataTransfer(items: DataTransferItemList): Promise<SourceFile[]> {
+  const entries = [...items].map((item) => item.webkitGetAsEntry?.() as unknown as LegacyEntry | null).filter(Boolean) as LegacyEntry[];
+  const output: SourceFile[] = [];
+  const readFile = (entry: LegacyFileEntry) => new Promise<File>((resolve, reject) => entry.file(resolve, reject));
+  const readDirectory = async (entry: LegacyDirectoryEntry) => {
+    const reader = entry.createReader();
+    const children: LegacyEntry[] = [];
+    while (true) {
+      const batch = await new Promise<LegacyEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
+      if (!batch.length) break;
+      children.push(...batch);
+    }
+    await Promise.all(children.map(walk));
+  };
+  const walk = async (entry: LegacyEntry): Promise<void> => {
+    if (entry.isDirectory) return readDirectory(entry);
+    const file = await readFile(entry);
+    const path = entry.fullPath.replace(/^\//, '') || file.name;
+    output.push({ path, name: file.name, size: file.size, type: file.type, lastModified: file.lastModified, getFile: async () => file });
+  };
+  await Promise.all(entries.map(walk));
+  return output;
+}
+
 export async function filesFromZips(zips: File[], onProgress: Progress = () => undefined): Promise<SourceFile[]> {
   const output: SourceFile[] = [];
   for (let zipIndex = 0; zipIndex < zips.length; zipIndex += 1) {

@@ -1,0 +1,7 @@
+# Takeout Tidy
+
+Takeout Tidy is a static, local-first browser utility for repairing Google Photos Takeout exports. It matches JSON sidecars, writes date and GPS metadata to JPEG and PNG files without re-encoding pixels, skips exact duplicates, renames files, and exports a clean folder or ZIP. Photo bytes never leave the user's device.
+
+Canonical URL: https://takeout-photo-metadata-fixer.sociobot.in/
+Privacy: https://takeout-photo-metadata-fixer.sociobot.in/privacy/
+Terms: https://takeout-photo-metadata-fixer.sociobot.in/terms/

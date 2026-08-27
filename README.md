@@ -43,6 +43,13 @@ The reproducible production command is `npm run build`. Static output lands in `
 
 Deploy `dist/` as a static site with SPA fallback to `index.html`. The checked-in `/privacy/`, `/terms/`, offline page, manifest, icons, and service worker are copied into that directory by Vite.
 
+For the factory container deployment, build and run the included multi-stage image. It serves `dist/` on port 8080 as an unprivileged user, preserves SPA routes and service-worker behavior, sets immutable cache headers only for fingerprinted bundles, and sends `no-store` for HTML, the manifest, and the service worker.
+
+```sh
+docker build -t takeout-tidy .
+docker run --rm -p 8080:8080 takeout-tidy
+```
+
 The free tier handles up to 20,000 media files. The optional one-time large-library unlock uses Sociobot billing. The factory can provide these build variables when the product is registered:
 
 - `VITE_SOCIOBOT_BUY_URL` — hosted Sociobot purchase URL.

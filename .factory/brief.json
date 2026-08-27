@@ -1,0 +1,14 @@
+{
+  "slug": "takeout-photo-metadata-fixer",
+  "title": "Drag-in Google Photos Takeout repair (JSON sidecar → EXIF, dedupe, rename)",
+  "user": "People leaving Google Photos who need a clean chronological library without installing Python or uploading private photos.",
+  "artifact_class": "pwa-offline",
+  "smallest_useful_product": "Select extracted Takeout folders or ZIP files, match Google JSON sidecars, preview results, repair JPEG and PNG metadata locally, deduplicate exact copies, optionally rename, and export a clean folder or ZIP.",
+  "constraints": [
+    "Folder read/write uses Chromium's File System Access API; other browsers use ZIP import/export.",
+    "HEIC and video container metadata is reported but not rewritten in v1.",
+    "Large libraries must be processed incrementally to limit memory use.",
+    "No photo bytes leave the device."
+  ],
+  "monetization": "Free for up to 20,000 input files with an optional one-time large-library license through Sociobot billing."
+}

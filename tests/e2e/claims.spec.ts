@@ -362,9 +362,10 @@ test('@claim:node-runtime @claim:build-output @claim:static-host-security @claim
   expect(staticConfig.globalHeaders['X-Frame-Options']).toBe('DENY');
   expect(staticConfig.globalHeaders['Permissions-Policy']).toContain('camera=()');
   expect(staticConfig.mimeTypes['.webmanifest']).toBe('application/manifest+json');
-  for (const route of ['/demo', '/demo/', '/privacy', '/privacy/', '/terms', '/terms/']) {
+  for (const route of ['/demo', '/privacy', '/terms']) {
     expect(staticConfig.routes.find((entry) => entry.route === route)?.rewrite, route).toBe('/index.html');
   }
+  expect(new Set(staticConfig.routes.map((entry) => entry.route)).size).toBe(staticConfig.routes.length);
   expect(staticConfig.routes.find((route) => route.route === '/sw.js')?.headers?.['Cache-Control']).toBe('no-store');
   expect(staticConfig.routes.find((route) => route.route === '/manifest.webmanifest')?.headers?.['Cache-Control']).toBe('no-store');
   expect(staticConfig.routes.some((route) => route.headers?.['Cache-Control']?.includes('immutable'))).toBe(true);

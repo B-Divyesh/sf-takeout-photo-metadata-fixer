@@ -79,6 +79,9 @@ Audited: 2026-08-28 after polish 1. Counts treat hyphenated terms, filenames, an
 | Demo mode uses memory and leaves real storage unchanged. | 9 | Pass; `demo-sandbox` claim. |
 | Photos, videos, ZIP files, Google JSON files, hashes, repaired files, and export logs stay in your browser. | 17 | Pass; `local-processing` claim. |
 | A license key is sent to the Sociobot API only after you choose Verify license. | 15 | Pass; specific and user-triggered. |
+| The repair workflow needs no account. | 6 | Pass; `no-account` claim. |
+| The app does not load payment-provider code. | 7 | Pass; `billing-boundary` claim. |
+| Send app routes such as `/demo` to `index.html`. | 8 | Pass; `build-output` claim. |
 
 ## Terminology
 

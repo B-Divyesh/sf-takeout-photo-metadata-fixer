@@ -46,13 +46,13 @@ The production build is in `dist/`. Its root contains `index.html`, the manifest
 
 ## Deploy
 
-Deploy `dist/` as a static site with address-bar fallback to `index.html`.
+Deploy `dist/` as a static site. Send app routes such as `/demo` to `index.html`.
 
 ```sh
 /opt/fleet/lib/deploy-static.sh takeout-photo-metadata-fixer dist
 ```
 
-The buy link and license check use Sociobot endpoints. The app does not load a payment-provider SDK. Set these variables only for registered replacements:
+The buy link and license check use Sociobot endpoints. The app does not load payment-provider code. Set these variables only for registered replacements:
 
 - `VITE_SOCIOBOT_BUY_URL`
 - `VITE_SOCIOBOT_LICENSE_VERIFY_URL`

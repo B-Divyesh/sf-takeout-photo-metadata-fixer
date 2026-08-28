@@ -1,27 +1,35 @@
-# Polish 2 handoff — Takeout Tidy
+# Review 3 handoff — Takeout Tidy
 
 Date: 2026-08-28
 
-Work order: `takeout-photo-metadata-fixer-polish-2`
+Work order: `takeout-photo-metadata-fixer-review-3`
 
 Live URL: <https://takeout-photo-metadata-fixer.sociobot.in/>
 
 ## Outcome
 
-Perfection-loop round 2 is complete. The repair keeps the paper archive-bench identity and static offline-PWA deployment class. Every finding in `review-1.md` and `review-2.md` is mapped in `polish-2.md`; none remains open.
+Review 3 is complete. No product code was changed. The live PWA remains clear
+on a cold mobile and desktop visit, has a populated one-click demo, and passes
+the registered claim, offline, privacy, routing, metadata, and accessibility
+checks. The review verdict is **FAIL** because two user-facing claims are not
+registered in `.factory/claims.json`:
+
+- `F-3-1`: “Preview matches before anything is written.” needs an atomic
+  pre-export/no-write browser claim.
+- `F-3-2`: “Every public promise is mapped to an executable browser check in
+  claims.json.” is an unsupported coverage assertion and should be removed or
+  bounded and tested.
 
 The two review-2 blockers were closed:
 
 - All user-facing location wording is conditional on a location being present in the Google JSON file. JPEG and PNG claim tests now prove both located and date-only exports. Date-only output receives its three date tags, receives no invented GPS directory, and is not labelled “location found.”
 - A new `large-library-unlock` claim imports 20,001 files, proves the gate is active, intercepts the real Sociobot verification request with a recorded valid response, checks its payload and saved activation, and proves the repaired export becomes enabled.
 
-The catalog sentence, README, Terms, metadata, manifest, machine-readable product text, claim registry, copy audit, build/version identifiers, and PWA start version were updated consistently.
+## Verification evidence
 
-## Exact verification evidence
+Reviewed commit: `3c81d6a7fdd91c5f461c5ef2039f9e67f2584d2b`
 
-Repair commit: `6e7886990a80df407ef9773f1cb6f8e16c1e0983`
-
-Fresh clone: `/tmp/takeout-polish2-clean.Unnr9O/repo`
+Fresh clone: `/tmp/takeout-review3-clean.RSKGfE`
 
 ```sh
 npm ci --ignore-scripts
@@ -35,41 +43,16 @@ Results:
 
 - `npm test`: 15/15 passed.
 - `npm run build`: passed; `dist/index.html` exists.
-- Claim registry: 24/24 commands passed separately.
-- `npm run test:claims`: 13/13 grouped desktop tests passed.
-- `npm run test:e2e`: 48/48 passed in the working tree and again in the fresh clone across desktop Chromium and Pixel 5 emulation.
-- Accessibility: integrated axe found zero serious/critical violations on Home, Demo, Privacy, Terms, and 404 in desktop and mobile projects.
-- Privacy: the full demo export made only same-origin requests with no request body; real IndexedDB and localStorage snapshots remained byte-for-byte unchanged.
-- Offline: the service-worker-controlled Demo reloaded and exported while the browser context was offline.
-- Production output: 55.43 kB raw initial JavaScript, 20.13 kB raw CSS; both remain far below budget.
-- Local Lighthouse: performance 100, accessibility 100, best practices 100, SEO 100; FCP 1.1 s, LCP 1.7 s, CLS 0, TBT 30 ms.
-
-## Deployment and live checks
-
-Deployment command:
-
-```sh
-/opt/fleet/lib/deploy-static.sh takeout-photo-metadata-fixer dist
-```
-
-Deployment ID: `7027c934-243a-4b77-9c7d-d1c2cf8b9361`
-
-The custom domain reported `Ready` and HTTPS returned 200. Cold checks after deployment found:
-
-- `/`, `/demo`, `/privacy/`, `/terms/`, `/offline.html`, `/sitemap.xml`, and `/robots.txt`: HTTP 200.
-- `/definitely-not-a-route`: HTTP 404 with the designed archive-bench not-found view.
-- Home and Demo: correct titles, one `h1`, `lang=en`, main landmark, complete image alt and button labels, and zero console errors.
-- Live deployed `@claim:jpeg-repair`, `@claim:png-repair`, and `@claim:large-library-unlock`: 3/3 passed.
-- Live first-screen/mobile, axe, route title/focus/404, legal/offline console, and touch-target tests: 5/5 passed.
-- Live Lighthouse: performance 99, accessibility 100, best practices 100, SEO 100; FCP 1.1 s, LCP 1.4 s, CLS 0, TBT 120 ms, total transfer 90 KiB.
-
-Evidence:
-
-- [Polish mapping](polish-2.md)
-- [Cold home report](evidence/polish-2/live-home/verify.json)
-- [Cold demo report](evidence/polish-2/live-demo/verify.json)
-- [Mobile home screenshot](evidence/polish-2/live-home/screenshot-mobile.png)
-- [Desktop demo screenshot](evidence/polish-2/live-demo/screenshot-desktop.png)
+- Every one of the 24 registered claim commands passed separately.
+- `npm run test:e2e`: passed in the clean clone across desktop and mobile.
+- Live cold browser: first screen answered job, audience, and first click at
+  390 px and desktop with no console error or horizontal overflow.
+- Live demo: populated inspection immediately after one click; reset restored
+  defaults; real storage snapshot remained unchanged.
+- Live privacy/offline: only same-origin, bodyless requests; a
+  service-worker-controlled `/demo` reloaded offline and downloaded its ZIP.
+- Live routes: shared shell, metadata, direct links, h1 focus on navigation and
+  Back, sitemap, and styled HTTP 404 were confirmed.
 
 ## Run locally
 
@@ -83,4 +66,7 @@ npm run test:e2e
 
 ## Known gaps and next steps
 
-None. HEIC, HEIF, and video metadata remain copy-only by the documented v1 product scope; this behavior is explicit and tested, not an unresolved defect.
+Implement the two documented Review 3 claim-contract fixes, then rerun the
+full clean-clone command set above. HEIC, HEIF, and video metadata remain
+copy-only by documented v1 scope; that behavior is explicit and tested, not an
+unresolved defect.

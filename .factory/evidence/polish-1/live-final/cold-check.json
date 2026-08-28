@@ -1,0 +1,42 @@
+{
+  "commit": "02c387f",
+  "checkedAt": "2026-08-28T11:25:53.018Z",
+  "demo": {
+    "downloadBytes": 5518,
+    "offlineDownloadBytes": 5518
+  },
+  "network": {
+    "onlySameOrigin": true,
+    "requestBodies": []
+  },
+  "routes": {
+    "/demo": {
+      "title": "Demo — Takeout Tidy",
+      "h1": "Inspect a sample Google Photos Takeout",
+      "focused": true
+    },
+    "/privacy/": {
+      "title": "Privacy — Takeout Tidy",
+      "h1": "Privacy, in plain language",
+      "focused": true
+    },
+    "/terms/": {
+      "title": "Terms — Takeout Tidy",
+      "h1": "Terms of use",
+      "focused": true
+    }
+  },
+  "notFound": {
+    "status": 404,
+    "title": "Page not found — Takeout Tidy",
+    "h1": "This page is not in the archive"
+  },
+  "mobile": {
+    "width": 390
+  },
+  "axe": {
+    "homeSeriousCritical": [],
+    "notFoundSeriousCritical": []
+  },
+  "scriptErrors": []
+}

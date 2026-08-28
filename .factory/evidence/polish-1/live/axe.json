@@ -1,0 +1,22 @@
+{
+  "/": {
+    "violations": 0,
+    "seriousOrCritical": []
+  },
+  "/demo": {
+    "violations": 0,
+    "seriousOrCritical": []
+  },
+  "/privacy/": {
+    "violations": 0,
+    "seriousOrCritical": []
+  },
+  "/terms/": {
+    "violations": 0,
+    "seriousOrCritical": []
+  },
+  "/definitely-not-a-route": {
+    "violations": 0,
+    "seriousOrCritical": []
+  }
+}

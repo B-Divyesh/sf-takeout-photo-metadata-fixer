@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-08-28T11:19:09.073Z",
+  "demo": {
+    "populated": true,
+    "reset": true,
+    "downloadBytes": 5518,
+    "storageUnchanged": true,
+    "offlineReload": true,
+    "offlineDownloadBytes": 5518
+  },
+  "privacy": {
+    "title": "Privacy — Takeout Tidy",
+    "h1": "Privacy, in plain language",
+    "focused": true
+  },
+  "terms": {
+    "title": "Terms — Takeout Tidy",
+    "h1": "Terms of use",
+    "focused": true
+  },
+  "notFound": {
+    "status": 404,
+    "title": "Page not found — Takeout Tidy",
+    "h1": "This page is not in the archive",
+    "returnLink": "/"
+  },
+  "mobile": {
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "factsVisible": 3
+  },
+  "network": {
+    "requestCount": 20,
+    "onlySameOrigin": true,
+    "bodiesSent": []
+  },
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ]
+}

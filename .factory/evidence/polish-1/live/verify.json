@@ -1,0 +1,14 @@
+{
+  "url": "https://takeout-photo-metadata-fixer.sociobot.in/demo?cold=polish-1",
+  "loadMs": 826,
+  "errors": [],
+  "a11y": {
+    "title": "Demo — Takeout Tidy",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 2216
+  }
+}

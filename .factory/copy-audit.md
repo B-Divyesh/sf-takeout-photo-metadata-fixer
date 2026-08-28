@@ -1,6 +1,6 @@
 # Copy audit
 
-Audited: 2026-08-28 after polish 2. Counts treat hyphenated terms, filenames, and numbers as one word. Every visitor-facing sentence in the landing, demo, legal routes, offline page, and README was checked. No sentence exceeds 22 words or uses a banned marketing word. “Unlock” appears only as the literal name of the paid file-limit removal.
+Audited: 2026-08-28 after polish 3. Counts treat hyphenated terms, filenames, and numbers as one word. Every visitor-facing sentence in the landing, demo, legal routes, offline page, and README was checked. No sentence exceeds 22 words or uses a banned marketing word. “Unlock” appears only as the literal name of the paid file-limit removal.
 
 ## First screen
 
@@ -11,7 +11,7 @@ Audited: 2026-08-28 after polish 2. Counts treat hyphenated terms, filenames, an
 | For people leaving Google Photos, restore dates and locations saved in Google JSON files, remove exact copies, and rename files. | 20 | Pass; location is conditional. |
 | Try it with sample data | 5 | Pass |
 | Choose your Takeout files | 4 | Pass |
-| Preview matches before anything is written. | 6 | Pass |
+| Preview matches before anything is written. | 6 | Pass; `preview-before-write` proves no output, download, completion, or storage write before export. |
 | Photos stay on this device. | 5 | Pass |
 | Works offline after the first load. | 6 | Pass |
 | Free for up to 20,000 files. | 7 | Pass |
@@ -85,6 +85,7 @@ Audited: 2026-08-28 after polish 2. Counts treat hyphenated terms, filenames, an
 | The repair workflow needs no account. | 6 | Pass; `no-account` claim. |
 | The app does not load payment-provider code. | 7 | Pass; `billing-boundary` claim. |
 | Send app routes such as `/demo` to `index.html`. | 8 | Pass; `build-output` claim. |
+| See `.factory/claims.json` for the registered product checks. | 7 | Pass; source-document link, not a coverage assertion. |
 
 ## Terminology
 

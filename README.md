@@ -20,7 +20,7 @@ Photo, filename, and Google JSON data stay on the device during repair and expor
 
 Repair is free for up to 20,000 media files. A $12 one-time unlock removes that limit with no subscription.
 
-Every public promise is mapped to an executable browser check in [`.factory/claims.json`](.factory/claims.json).
+See [`.factory/claims.json`](.factory/claims.json) for the registered product checks.
 
 ## Run locally
 

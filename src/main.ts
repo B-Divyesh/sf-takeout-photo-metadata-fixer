@@ -8,7 +8,7 @@ import type { ProgressUpdate, RepairOptions, ScanResult, SessionSummary, SourceF
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const FREE_FILE_LIMIT = 20_000;
-const BUILD_ID = '1.0.2 · polish 2';
+const BUILD_ID = '1.0.3 · polish 3';
 const SITE = 'https://takeout-photo-metadata-fixer.sociobot.in';
 const defaults: RepairOptions = { deduplicate: true, rename: true, renamePattern: 'date-original', organize: 'year-month', includeUnmatched: true };
 type Route = 'home' | 'demo' | 'privacy' | 'terms' | 'not-found';

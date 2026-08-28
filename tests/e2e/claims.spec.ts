@@ -197,6 +197,57 @@ test('@claim:demo-sandbox @claim:local-processing @claim:no-account sample mode 
   expect(await storageSnapshot(page)).toBe(before);
 });
 
+test('@claim:preview-before-write importing files reaches preview without writing output or saved state', async ({ page }) => {
+  await page.addInitScript(() => {
+    const signals = { pickerCalls: 0, objectUrls: 0, downloadClicks: 0 };
+    (window as unknown as { previewWriteSignals: typeof signals }).previewWriteSignals = signals;
+    (window as unknown as { showDirectoryPicker: () => Promise<never> }).showDirectoryPicker = async () => {
+      signals.pickerCalls += 1;
+      throw new DOMException('Unexpected folder picker', 'AbortError');
+    };
+    const createObjectURL = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (object: Blob | MediaSource) => {
+      signals.objectUrls += 1;
+      return createObjectURL(object);
+    };
+    const click = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.download) signals.downloadClicks += 1;
+      return click.call(this);
+    };
+  });
+  let downloads = 0;
+  page.on('download', () => { downloads += 1; });
+
+  await page.goto('/?demo=1');
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  const before = await storageSnapshot(page);
+  const fixture = zipSync({
+    'Takeout/Google Photos/preview.jpg': originalJpeg,
+    'Takeout/Google Photos/preview.jpg.json': new TextEncoder().encode(JSON.stringify({
+      title: 'preview.jpg',
+      photoTakenTime: { timestamp: '1600000000' }
+    }))
+  });
+
+  await page.locator('#zip-input').setInputFiles({ name: 'preview.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture) });
+  await expect(page.getByRole('heading', { name: 'Inspect the matches' })).toBeVisible();
+  await expect(page.getByText('Nothing has been written.')).toBeVisible();
+  await expect(page.getByText('preview.jpg', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Repaired export complete.')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Download repaired ZIP' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Write to a folder' })).toBeEnabled();
+
+  expect(await storageSnapshot(page)).toBe(before);
+  expect(await page.evaluate(() => (window as unknown as { previewWriteSignals: { pickerCalls: number; objectUrls: number; downloadClicks: number } }).previewWriteSignals)).toEqual({
+    pickerCalls: 0,
+    objectUrls: 0,
+    downloadClicks: 0
+  });
+  expect(downloads).toBe(0);
+});
+
 test('@claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:pixel-preservation @claim:export-log @claim:folder-export the sample export has every promised repair result', async ({ page }) => {
   await page.addInitScript(() => {
     const writes: Record<string, number[] | string> = {};

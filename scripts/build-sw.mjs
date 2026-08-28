@@ -42,11 +42,8 @@ const staticConfig = {
   mimeTypes: { '.webmanifest': 'application/manifest+json' },
   routes: [
     { route: '/demo', rewrite: '/index.html' },
-    { route: '/demo/', rewrite: '/index.html' },
     { route: '/privacy', rewrite: '/index.html' },
-    { route: '/privacy/', rewrite: '/index.html' },
     { route: '/terms', rewrite: '/index.html' },
-    { route: '/terms/', rewrite: '/index.html' },
     ...hashedAssets.map((route) => ({ route, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } })),
     { route: '/sw.js', headers: { 'Cache-Control': 'no-store', 'Service-Worker-Allowed': '/' } },
     { route: '/manifest.webmanifest', headers: { 'Cache-Control': 'no-store' } }

@@ -1,6 +1,8 @@
 # Copy audit
 
-Audited: 2026-08-28 after polish 3. Counts treat hyphenated terms, filenames, and numbers as one word. Every visitor-facing sentence in the landing, demo, legal routes, offline page, and README was checked. No sentence exceeds 22 words or uses a banned marketing word. “Unlock” appears only as the literal name of the paid file-limit removal.
+Audited: 2026-08-28 after polish 4. Counts treat hyphenated terms, filenames, and numbers as one word. Every visitor-facing sentence in the landing, demo, legal routes, offline page, README, and catalog description was checked. No sentence exceeds 22 words or uses a banned marketing word. “Unlock” appears only as the literal name of the paid file-limit removal.
+
+The catalog description is “Repair Google Photos Takeout dates, locations, exact copies, and filenames on your device.” It starts with a verb and is 90 characters.
 
 ## First screen
 

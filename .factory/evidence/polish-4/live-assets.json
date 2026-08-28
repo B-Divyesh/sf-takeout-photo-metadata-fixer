@@ -1,0 +1,59 @@
+{
+  "checkedAt": "2026-08-28T15:11:06.399Z",
+  "oneClick": {
+    "url": "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+    "banner": "Demo — sample data, nothing is saved\nReset demo\nStart for real",
+    "rows": 8,
+    "overflow": 0,
+    "startForReal": {
+      "url": "https://takeout-photo-metadata-fixer.sociobot.in/",
+      "demoBanner": 0,
+      "focused": "page-title"
+    }
+  },
+  "endpoints": [
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "type": "text/plain",
+      "cache": "public, must-revalidate, max-age=30"
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200,
+      "type": "text/xml",
+      "cache": "public, must-revalidate, max-age=30"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "status": 200,
+      "type": "application/manifest+json",
+      "cache": "no-store"
+    },
+    {
+      "path": "/sw.js",
+      "status": 200,
+      "type": "text/javascript",
+      "cache": "no-store"
+    },
+    {
+      "path": "/assets/social-preview.jpg",
+      "status": 200,
+      "type": "image/jpeg",
+      "cache": "public, must-revalidate, max-age=30"
+    },
+    {
+      "path": "/offline.html",
+      "status": 200,
+      "type": "text/html",
+      "cache": "public, must-revalidate, max-age=30"
+    }
+  ],
+  "headers": {
+    "csp": "default-src 'self'; base-uri 'self'; connect-src 'self' https://api.sociobot.in; font-src 'self' data:; form-action 'self'; frame-ancestors 'none'; img-src 'self' blob: data:; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'",
+    "frame": "DENY",
+    "contentTypeOptions": "nosniff",
+    "referrer": "strict-origin-when-cross-origin",
+    "permissions": "camera=(), geolocation=(), microphone=(), payment=(), usb=()"
+  }
+}

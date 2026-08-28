@@ -1,0 +1,217 @@
+{
+  "checkedAt": "2026-08-28T15:10:25.324Z",
+  "errors": [
+    {
+      "path": "/not-in-the-archive",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ],
+  "unexpectedErrors": [],
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "title": "Takeout Tidy — repair Google Photos dates",
+      "lang": "en",
+      "h1": 1,
+      "main": true,
+      "description": "Fix dates and locations saved in Google JSON files. Remove exact copies and rename photos without uploading them.",
+      "canonical": "https://takeout-photo-metadata-fixer.sociobot.in/",
+      "overflow": 0,
+      "focused": "",
+      "links": [
+        "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://sociobot.in/buy?product=takeout-photo-metadata-fixer",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/terms/"
+      ],
+      "seriousAxe": []
+    },
+    {
+      "path": "/?demo=1",
+      "status": 200,
+      "title": "Demo — Takeout Tidy",
+      "lang": "en",
+      "h1": 1,
+      "main": true,
+      "description": "Try Takeout Tidy with a private sample Google Photos export.",
+      "canonical": "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+      "overflow": 0,
+      "focused": "page-title",
+      "links": [
+        "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/terms/"
+      ],
+      "seriousAxe": []
+    },
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "title": "Privacy — Takeout Tidy",
+      "lang": "en",
+      "h1": 1,
+      "main": true,
+      "description": "How Takeout Tidy handles photos, Google JSON files, settings, and license checks.",
+      "canonical": "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+      "overflow": 0,
+      "focused": "page-title",
+      "links": [
+        "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/terms/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/terms/"
+      ],
+      "seriousAxe": []
+    },
+    {
+      "path": "/terms/",
+      "status": 200,
+      "title": "Terms — Takeout Tidy",
+      "lang": "en",
+      "h1": 1,
+      "main": true,
+      "description": "Terms for repairing a Google Photos Takeout with Takeout Tidy.",
+      "canonical": "https://takeout-photo-metadata-fixer.sociobot.in/terms/",
+      "overflow": 0,
+      "focused": "page-title",
+      "links": [
+        "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/terms/"
+      ],
+      "seriousAxe": []
+    },
+    {
+      "path": "/not-in-the-archive",
+      "status": 404,
+      "title": "Page not found — Takeout Tidy",
+      "lang": "en",
+      "h1": 1,
+      "main": true,
+      "description": "This paper label does not match a page. Return to the Takeout repair tool.",
+      "canonical": "https://takeout-photo-metadata-fixer.sociobot.in/not-in-the-archive",
+      "overflow": 0,
+      "focused": "page-title",
+      "links": [
+        "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+        "https://takeout-photo-metadata-fixer.sociobot.in/terms/"
+      ],
+      "seriousAxe": []
+    }
+  ],
+  "routing": [
+    {
+      "start": "/",
+      "current": {
+        "url": "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "scrollY": 1704,
+        "top": 0.203125,
+        "bottom": 365.46875,
+        "focused": "how-title"
+      },
+      "back": {
+        "url": "https://takeout-photo-metadata-fixer.sociobot.in/",
+        "scrollY": 0,
+        "focused": "page-title"
+      }
+    },
+    {
+      "start": "/demo",
+      "current": {
+        "url": "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+        "scrollY": 1704,
+        "top": 0.203125,
+        "bottom": 365.46875,
+        "focused": "how-title"
+      },
+      "back": {
+        "url": "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+        "scrollY": 0,
+        "focused": "page-title"
+      }
+    }
+  ],
+  "direct": {
+    "url": "https://takeout-photo-metadata-fixer.sociobot.in/#how-it-works",
+    "scrollY": 1704,
+    "top": 0.203125,
+    "focused": "how-title"
+  },
+  "demoAudit": {
+    "banner": "Demo — sample data, nothing is saved\nReset demo\nStart for real",
+    "rowsBefore": 8,
+    "resetChecked": true,
+    "download": "takeout-tidy-repaired.zip",
+    "completion": "Repaired export complete.\n\n6 files written, 1 exact copies skipped.",
+    "storageBefore": {
+      "local": [
+        [
+          "audit:real-sentinel",
+          "keep-me"
+        ]
+      ],
+      "dbs": []
+    },
+    "storageAfter": {
+      "local": [
+        [
+          "audit:real-sentinel",
+          "keep-me"
+        ]
+      ],
+      "dbs": []
+    },
+    "storageUnchanged": true,
+    "requestCount": 42,
+    "foreign": [],
+    "bodies": []
+  },
+  "linkChecks": [
+    {
+      "url": "https://takeout-photo-metadata-fixer.sociobot.in/",
+      "status": 200
+    },
+    {
+      "url": "https://takeout-photo-metadata-fixer.sociobot.in/demo",
+      "status": 200
+    },
+    {
+      "url": "https://takeout-photo-metadata-fixer.sociobot.in/privacy/",
+      "status": 200
+    },
+    {
+      "url": "https://sociobot.in/buy?product=takeout-photo-metadata-fixer",
+      "status": 200
+    },
+    {
+      "url": "https://takeout-photo-metadata-fixer.sociobot.in/terms/",
+      "status": 200
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "start": "/",
+    "current": {
+      "url": "http://127.0.0.1:4173/#how-it-works",
+      "scrollY": 1704,
+      "top": 0.203125,
+      "bottom": 365.46875,
+      "focused": "how-title"
+    },
+    "back": {
+      "url": "http://127.0.0.1:4173/",
+      "scrollY": 0,
+      "focused": "page-title"
+    }
+  },
+  {
+    "start": "/demo",
+    "current": {
+      "url": "http://127.0.0.1:4173/#how-it-works",
+      "scrollY": 1704,
+      "top": 0.203125,
+      "bottom": 365.46875,
+      "focused": "how-title"
+    },
+    "back": {
+      "url": "http://127.0.0.1:4173/demo",
+      "scrollY": 0,
+      "focused": "page-title"
+    }
+  }
+]

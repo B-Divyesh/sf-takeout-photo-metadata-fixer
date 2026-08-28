@@ -252,6 +252,7 @@ test('@claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:
   await page.addInitScript(() => {
     const writes: Record<string, number[] | string> = {};
     (window as unknown as { claimFolderWrites: typeof writes }).claimFolderWrites = writes;
+    (window as unknown as { claimFolderPickerCalls: number }).claimFolderPickerCalls = 0;
     const directory = (prefix = ''): unknown => ({
       kind: 'directory',
       name: prefix.split('/').pop() || 'chosen-folder',
@@ -263,7 +264,10 @@ test('@claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:
         })
       })
     });
-    (window as unknown as { showDirectoryPicker: () => Promise<unknown> }).showDirectoryPicker = async () => directory();
+    (window as unknown as { showDirectoryPicker: () => Promise<unknown> }).showDirectoryPicker = async () => {
+      (window as unknown as { claimFolderPickerCalls: number }).claimFolderPickerCalls += 1;
+      return directory();
+    };
   });
   const archive = await downloadDemo(page);
   const jpeg = findEntry(archive, '2022-07-03_07-45-00_Lisbon tram.jpg');
@@ -292,7 +296,8 @@ test('@claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:
   expect(manifest.files.find((entry) => entry.input.endsWith('Coast walk.png'))?.output).toMatch(/^2022\/09\/2022-09-03_14-30-00_/);
 
   await page.getByRole('button', { name: 'Write to a folder' }).click();
-  await expect(page.getByText('Repaired export complete.')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { claimFolderPickerCalls: number }).claimFolderPickerCalls)).toBe(1);
+  await expect.poll(() => page.evaluate(() => Object.keys((window as unknown as { claimFolderWrites: Record<string, number[] | string> }).claimFolderWrites).some((path) => path.endsWith('/takeout-tidy-manifest.json')))).toBe(true);
   const writes = await page.evaluate(() => (window as unknown as { claimFolderWrites: Record<string, number[] | string> }).claimFolderWrites);
   const manifestPath = Object.keys(writes).find((path) => path.endsWith('/takeout-tidy-manifest.json'));
   expect(manifestPath).toBeTruthy();

@@ -38,16 +38,19 @@ const securityHeaders = {
   'X-Frame-Options': 'DENY'
 };
 const staticConfig = {
-  navigationFallback: {
-    rewrite: '/index.html',
-    exclude: ['/assets/*', '/sw.js', '/manifest.webmanifest', '/offline.html', '/privacy/*', '/terms/*']
-  },
   globalHeaders: securityHeaders,
   mimeTypes: { '.webmanifest': 'application/manifest+json' },
   routes: [
+    { route: '/demo', rewrite: '/index.html' },
+    { route: '/demo/', rewrite: '/index.html' },
+    { route: '/privacy', rewrite: '/index.html' },
+    { route: '/privacy/', rewrite: '/index.html' },
+    { route: '/terms', rewrite: '/index.html' },
+    { route: '/terms/', rewrite: '/index.html' },
     ...hashedAssets.map((route) => ({ route, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } })),
     { route: '/sw.js', headers: { 'Cache-Control': 'no-store', 'Service-Worker-Allowed': '/' } },
     { route: '/manifest.webmanifest', headers: { 'Cache-Control': 'no-store' } }
-  ]
+  ],
+  responseOverrides: { '404': { rewrite: '/index.html' } }
 };
 writeFileSync(join(root, 'staticwebapp.config.json'), `${JSON.stringify(staticConfig, null, 2)}\n`);

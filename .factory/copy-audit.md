@@ -1,0 +1,72 @@
+# Copy audit
+
+Audited: 2026-08-28. Counts treat hyphenated terms, filenames, and numbers as one word. No line exceeds 22 words or uses a banned marketing word.
+
+## First screen
+
+| Copy | Words | Result |
+| --- | ---: | --- |
+| Private photo repair | 3 | Pass |
+| Repair your Google Photos Takeout | 6 | Pass |
+| For people leaving Google Photos, restore dates and locations, remove exact copies, and rename files on this device. | 18 | Pass |
+| Try it with sample data | 5 | Pass |
+| Choose your Takeout files | 4 | Pass |
+| Preview matches before anything is written. | 6 | Pass |
+| Photos stay on this device. | 5 | Pass |
+| Works offline after the first load. | 6 | Pass |
+| Free for up to 20,000 files. | 7 | Pass |
+| Takeout files in. | 3 | Pass |
+| Photos sorted by date, with exact copies removed. | 8 | Pass |
+
+## Repair tool
+
+| Copy | Words | Result |
+| --- | ---: | --- |
+| Choose your Takeout files | 4 | Pass |
+| Choose an extracted folder or one or more Takeout ZIP files. | 11 | Pass |
+| Read files from a folder you select | 7 | Pass |
+| Import one or more ZIP files | 6 | Pass |
+| Choose ZIP files, or drag a folder here | 8 | Pass |
+| Repairs dates and locations in JPEG and PNG photos. | 9 | Pass |
+| Copies HEIC, HEIF, and video files without changing their metadata. | 10 | Pass |
+| Photo pixels are not changed. | 5 | Pass |
+| Nothing has been written. | 4 | Pass |
+| Review each match and choose the repaired export. | 8 | Pass |
+| The export log lists every written, skipped, and failed file. | 10 | Pass |
+
+## Explanation, privacy, and price
+
+| Copy | Words | Result |
+| --- | ---: | --- |
+| Repair in three steps | 4 | Pass |
+| How Takeout repair works | 4 | Pass |
+| Matches JSON files, shortened Google filenames, and duplicate album filenames. | 10 | Pass |
+| Adds the Google date and location to each supported photo. | 10 | Pass |
+| Skips exact copies, renames files by date, and logs each result. | 11 | Pass |
+| The repair runs in your browser. | 6 | Pass |
+| It needs no account and sends no photo, filename, or Google JSON data to a server. | 16 | Pass |
+| Repair up to 20,000 files free | 6 | Pass |
+| A $12 one-time unlock removes the file limit. | 8 | Pass |
+| There is no subscription. | 4 | Pass |
+
+## Demo and route states
+
+| Copy | Words | Result |
+| --- | ---: | --- |
+| Demo — sample data, nothing is saved | 7 | Pass |
+| Inspect a sample Google Photos Takeout | 7 | Pass |
+| This in-memory sample includes repaired photos, an exact copy, an unmatched file, and copy-only media. | 15 | Pass |
+| This page is not in the archive | 7 | Pass |
+| The address does not match a Takeout Tidy page. | 9 | Pass |
+| Return to repair tool | 4 | Pass |
+
+## Terminology
+
+| Concept | Required term |
+| --- | --- |
+| Google metadata file | Google JSON file |
+| Identical item | exact copy |
+| Repaired deliverable | repaired export |
+| File input | Takeout files |
+| Action log | export log; filename shown once as `takeout-tidy-manifest.json` |
+| Geographic metadata | location; GPS appears only in technical tests |

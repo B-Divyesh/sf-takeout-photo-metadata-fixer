@@ -66,16 +66,19 @@ test('home page exposes the complete starting workflow', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('main')).toBeVisible();
   await expect(page.getByRole('button', { name: /Choose extracted folder/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Choose Takeout ZIPs/ })).toBeVisible();
-  await expect(page.getByText('0 bytes', { exact: false })).toBeVisible();
+  await expect(page.locator('#choose-zips')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Try it with sample data/ })).toBeVisible();
+  await expect(page.getByText('Free for up to 20,000 files.')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
 test('has no serious accessibility violations', async ({ page }) => {
-  await page.goto('/');
-  const results = await new AxeBuilder({ page }).analyze();
-  const serious = results.violations.filter((violation) => violation.impact === 'serious' || violation.impact === 'critical');
-  expect(serious).toEqual([]);
+  for (const path of ['/', '/demo', '/privacy/', '/terms/', '/missing-page']) {
+    await page.goto(path);
+    const results = await new AxeBuilder({ page: page as never }).analyze();
+    const serious = results.violations.filter((violation) => violation.impact === 'serious' || violation.impact === 'critical');
+    expect(serious, path).toEqual([]);
+  }
 });
 
 test('app shell reloads offline after installation', async ({ page, context }) => {
@@ -85,7 +88,7 @@ test('app shell reloads offline after installation', async ({ page, context }) =
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('heading', { name: /Put the dates back/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Repair your Google Photos Takeout/ })).toBeVisible();
   await context.setOffline(false);
 });
 
@@ -98,7 +101,7 @@ test('announces a newly waiting service-worker update in the open app', async ({
   // A distinct script URL is a real Service Worker update, but lets this
   // static test server provide a deterministic second worker without writes.
   await page.evaluate(async () => {
-    await navigator.serviceWorker.register('/sw.js?update-test', { scope: '/' });
+    await navigator.serviceWorker.register('/sw-update-test.js', { scope: '/' });
   });
   await expect(page.locator('#toast')).toContainText('A new version is ready.');
   await expect(page.getByRole('button', { name: 'Reload now' })).toBeVisible();
@@ -124,14 +127,14 @@ test('repairs a Takeout ZIP, including GPS EXIF for JPEG and PNG, and downloads 
   await page.goto('/');
   await page.locator('#zip-input').setInputFiles({ name: 'takeout.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture) });
   await expect(page.getByRole('heading', { name: 'Inspect the matches' })).toBeVisible();
-  await expect(page.getByText('sidecars matched')).toBeVisible();
+  await expect(page.getByText('Google JSON files matched')).toBeVisible();
   await expect(page.getByText('Ready', { exact: true }).first()).toBeVisible();
 
-  const accessibility = await new AxeBuilder({ page }).analyze();
+  const accessibility = await new AxeBuilder({ page: page as never }).analyze();
   expect(accessibility.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
 
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download ZIP' }).click();
+  await page.getByRole('button', { name: 'Download repaired ZIP' }).click();
   const download = await downloadPromise;
   const path = await download.path();
   expect(path).toBeTruthy();
@@ -141,5 +144,54 @@ test('repairs a Takeout ZIP, including GPS EXIF for JPEG and PNG, and downloads 
   expectGpsTags(jpegTiff(repairedJpeg));
   expectGpsTags(pngTiff(repairedPng));
   expect(archive['takeout-tidy-manifest.json']).toBeTruthy();
-  await expect(page.getByText('Archive complete.')).toBeVisible();
+  await expect(page.getByText('Repaired export complete.')).toBeVisible();
+});
+
+test('demo, legal, and not-found routes have distinct metadata and focus', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page).toHaveTitle('Demo — Takeout Tidy');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/demo$/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-preview\.jpg$/);
+  await page.getByRole('link', { name: 'Privacy' }).first().click();
+  await expect(page).toHaveURL(/\/privacy\/$/);
+  await expect(page).toHaveTitle('Privacy — Takeout Tidy');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/privacy\/$/);
+  await page.goBack();
+  await expect(page).toHaveTitle('Demo — Takeout Tidy');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await page.goto('/definitely-not-a-route');
+  await expect(page).toHaveTitle('Page not found — Takeout Tidy');
+  await expect(page.getByRole('heading', { name: 'This page is not in the archive' })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Return to repair tool' })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/definitely-not-a-route$/);
+});
+
+test('legal and offline pages load without console errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  for (const path of ['/privacy/', '/terms/', '/offline.html']) {
+    await page.goto(path);
+    await expect(page.getByRole('main')).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
+test('file filters and chooser controls meet the touch target minimum', async ({ page }) => {
+  await page.goto('/demo');
+  for (const button of await page.locator('.filter').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.goto('/');
+  await expect(page.locator('#drop-action')).toBeVisible();
+  expect((await page.locator('#drop-action').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+});
+
+test('publishes a real sitemap and social assets', async ({ request }) => {
+  const sitemap = await request.get('/sitemap.xml');
+  expect(sitemap.ok()).toBe(true);
+  expect(sitemap.headers()['content-type']).toContain('xml');
+  expect(await sitemap.text()).toContain('<loc>https://takeout-photo-metadata-fixer.sociobot.in/demo</loc>');
+  const social = await request.get('/assets/social-preview.jpg');
+  expect(social.ok()).toBe(true);
+  expect((await social.body()).byteLength).toBeGreaterThan(100_000);
 });

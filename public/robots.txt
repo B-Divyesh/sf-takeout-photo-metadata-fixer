@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://takeout-photo-metadata-fixer.sociobot.in/sitemap.xml

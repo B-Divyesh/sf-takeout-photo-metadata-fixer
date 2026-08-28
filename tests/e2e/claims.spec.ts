@@ -70,6 +70,18 @@ function tiffValues(tiff: Uint8Array) {
   };
 }
 
+function tiffDates(tiff: Uint8Array) {
+  const view = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
+  const ifd0 = entriesAt(tiff, view.getUint32(4, true));
+  const exif = entriesAt(tiff, ifd0.get(0x8769)!.value);
+  return {
+    modified: asciiValue(tiff, ifd0.get(0x0132)!),
+    original: asciiValue(tiff, exif.get(0x9003)!),
+    digitized: asciiValue(tiff, exif.get(0x9004)!),
+    hasGpsDirectory: ifd0.has(0x8825)
+  };
+}
+
 function jpegTiff(bytes: Uint8Array) {
   expect([...bytes.slice(0, 12)]).toEqual([0xff, 0xd8, 0xff, 0xe1, expect.any(Number), expect.any(Number), 69, 120, 105, 102, 0, 0]);
   return bytes.slice(12);
@@ -123,6 +135,30 @@ async function storageSnapshot(page: Page) {
   });
 }
 
+async function importAndDownloadDateOnly(page: Page, type: 'jpeg' | 'png') {
+  const extension = type === 'jpeg' ? 'jpg' : 'png';
+  const bytes = type === 'jpeg' ? originalJpeg : originalPng;
+  const name = `date-only.${extension}`;
+  const fixture = zipSync({
+    [`Takeout/Google Photos/${name}`]: bytes,
+    [`Takeout/Google Photos/${name}.json`]: new TextEncoder().encode(JSON.stringify({
+      title: name,
+      photoTakenTime: { timestamp: '1700000000' },
+      geoData: { latitude: 0, longitude: 0 }
+    }))
+  });
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await page.locator('#zip-input').setInputFiles({ name: `${type}-date-only.zip`, mimeType: 'application/zip', buffer: Buffer.from(fixture) });
+  const row = page.locator('.file-row:not(.file-header)').filter({ hasText: name });
+  await expect(row).toContainText('2023-11-14');
+  await expect(row).not.toContainText('location found');
+  const pending = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download repaired ZIP' }).click();
+  const path = await (await pending).path();
+  const archive = unzipSync(new Uint8Array(await readFile(path!)));
+  return findEntry(archive, `2023-11-14_22-13-20_${name}`);
+}
+
 test('@claim:demo-sandbox @claim:local-processing @claim:no-account sample mode is populated, isolated, resettable, and makes no external request', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
@@ -161,7 +197,7 @@ test('@claim:demo-sandbox @claim:local-processing @claim:no-account sample mode 
   expect(await storageSnapshot(page)).toBe(before);
 });
 
-test('@claim:jpeg-repair @claim:png-repair @claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:pixel-preservation @claim:export-log @claim:folder-export the sample export has every promised repair result', async ({ page }) => {
+test('@claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:pixel-preservation @claim:export-log @claim:folder-export the sample export has every promised repair result', async ({ page }) => {
   await page.addInitScript(() => {
     const writes: Record<string, number[] | string> = {};
     (window as unknown as { claimFolderWrites: typeof writes }).claimFolderWrites = writes;
@@ -214,6 +250,38 @@ test('@claim:jpeg-repair @claim:png-repair @claim:exact-copy-dedupe @claim:date-
   expect(Object.keys(writes).filter((path) => !path.endsWith('takeout-tidy-manifest.json'))).toHaveLength(6);
 });
 
+test('@claim:jpeg-repair writes a JPEG date and only writes GPS when the Google JSON has a location', async ({ page }) => {
+  const archive = await downloadDemo(page);
+  const located = tiffValues(jpegTiff(findEntry(archive, '2022-07-03_07-45-00_Lisbon tram.jpg')));
+  expect(located).toMatchObject({ modified: '2022:07:03 07:45:00', original: '2022:07:03 07:45:00', digitized: '2022:07:03 07:45:00' });
+  expect(located.latitude).toBeCloseTo(38.7139, 5);
+  expect(located.longitude).toBeCloseTo(-9.1394, 5);
+
+  const dateOnly = jpegTiff(await importAndDownloadDateOnly(page, 'jpeg'));
+  expect(tiffDates(dateOnly)).toEqual({
+    modified: '2023:11:14 22:13:20',
+    original: '2023:11:14 22:13:20',
+    digitized: '2023:11:14 22:13:20',
+    hasGpsDirectory: false
+  });
+});
+
+test('@claim:png-repair writes a PNG date and only writes GPS when the Google JSON has a location', async ({ page }) => {
+  const archive = await downloadDemo(page);
+  const located = tiffValues(pngExif(findEntry(archive, '2022-09-03_14-30-00_Coast walk.png')));
+  expect(located).toMatchObject({ modified: '2022:09:03 14:30:00', original: '2022:09:03 14:30:00', digitized: '2022:09:03 14:30:00' });
+  expect(located.latitude).toBeCloseTo(50.1188, 5);
+  expect(located.longitude).toBeCloseTo(-5.5371, 5);
+
+  const dateOnly = pngExif(await importAndDownloadDateOnly(page, 'png'));
+  expect(tiffDates(dateOnly)).toEqual({
+    modified: '2023:11:14 22:13:20',
+    original: '2023:11:14 22:13:20',
+    digitized: '2023:11:14 22:13:20',
+    hasGpsDirectory: false
+  });
+});
+
 test('@claim:google-json-match sample pairs standard, shortened, and duplicate-album Google JSON filenames', async ({ page }) => {
   await page.goto('/demo');
   const rows = page.locator('.file-row:not(.file-header)');
@@ -261,6 +329,29 @@ test('@claim:one-time-price shows the exact license price and Sociobot checkout'
   await expect(page.getByText('A $12 one-time unlock removes the file limit. There is no subscription.')).toBeVisible();
   const link = page.getByRole('link', { name: 'Buy the $12 unlock' });
   await expect(link).toHaveAttribute('href', 'https://sociobot.in/buy?product=takeout-photo-metadata-fixer');
+});
+
+test('@claim:large-library-unlock a valid Sociobot license enables export above 20,000 files', async ({ page }) => {
+  test.setTimeout(90_000);
+  const entries: Record<string, Uint8Array> = {};
+  for (let index = 0; index < 20_001; index += 1) entries[`Takeout/Google Photos/p${String(index).padStart(5, '0')}.jpg`] = new Uint8Array([0xff, 0xd8, 0xff, 0xd9, index & 255]);
+  const fixture = Buffer.from(zipSync(entries, { level: 0 }));
+  let verificationBody: unknown;
+  await page.route('https://api.sociobot.in/api/v1/licenses/verify', async (route) => {
+    verificationBody = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true }) });
+  });
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await page.locator('#zip-input').setInputFiles({ name: 'licensed-library.zip', mimeType: 'application/zip', buffer: fixture });
+  const exportButton = page.getByRole('button', { name: 'Download repaired ZIP' });
+  await expect(exportButton).toBeDisabled();
+  await page.getByLabel('License key').fill('test-license-20001');
+  await page.getByRole('button', { name: 'Verify license' }).click();
+  await expect(page.getByText('Large-library license activated in this browser.')).toBeVisible();
+  await expect(exportButton).toBeEnabled();
+  expect(verificationBody).toEqual({ license_key: 'test-license-20001', product_slug: 'takeout-photo-metadata-fixer' });
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('takeout-tidy-license') ?? '{}'))).toMatchObject({ key: 'test-license-20001', valid: true });
 });
 
 test('@claim:folder-picker imports a selected folder and requests access only after the folder action', async ({ page }) => {

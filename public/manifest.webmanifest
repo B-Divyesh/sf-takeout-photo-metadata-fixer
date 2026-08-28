@@ -1,9 +1,9 @@
 {
   "name": "Takeout Tidy — repair Google Photos dates",
   "short_name": "Takeout Tidy",
-  "description": "Fix dates and locations, remove exact copies, and rename Google Photos Takeout files on your device.",
+  "description": "Fix dates and locations saved in Google JSON files, remove exact copies, and rename Takeout photos on your device.",
   "id": "/?source=pwa",
-  "start_url": "/?v=3",
+  "start_url": "/?v=4",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f5ebd8",

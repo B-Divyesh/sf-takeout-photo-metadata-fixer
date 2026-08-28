@@ -76,7 +76,7 @@ test('390 px first screen names the job, audience, actions, and three facts with
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Repair your Google Photos Takeout' })).toBeVisible();
-  await expect(page.getByText('For people leaving Google Photos, restore dates and locations, remove exact copies, and rename files on this device.')).toBeVisible();
+  await expect(page.getByText('For people leaving Google Photos, restore dates and locations saved in Google JSON files, remove exact copies, and rename files.')).toBeVisible();
   await expect(page.getByRole('link', { name: /Try it with sample data/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Choose your Takeout files' })).toBeVisible();
   await expect(page.locator('.hero-facts li')).toHaveCount(3);

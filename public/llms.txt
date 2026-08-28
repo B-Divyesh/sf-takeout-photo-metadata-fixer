@@ -1,6 +1,6 @@
 # Takeout Tidy
 
-Repair Google Photos Takeout dates and locations in your browser. Takeout Tidy matches photos to Google JSON files and repairs JPEG and PNG files. It preserves photo pixels, skips exact copies, renames files by date, and exports to a folder or ZIP. Photo, filename, and Google JSON data stay on the device.
+Repair Google Photos Takeout dates and any locations saved in Google JSON files. Takeout Tidy repairs JPEG and PNG files in your browser. It preserves photo pixels, skips exact copies, renames files by date, and exports to a folder or ZIP. Photo, filename, and Google JSON data stay on the device.
 
 Canonical URL: https://takeout-photo-metadata-fixer.sociobot.in/
 Privacy: https://takeout-photo-metadata-fixer.sociobot.in/privacy/

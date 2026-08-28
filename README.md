@@ -1,6 +1,6 @@
 # Takeout Tidy
 
-Repair Google Photos Takeout dates and locations in your browser.
+Repair Google Photos Takeout dates and locations saved in Google JSON files.
 
 Takeout Tidy is for people leaving Google Photos with wrong dates, repeated album copies, or separate Google JSON files.
 
@@ -11,7 +11,7 @@ Takeout Tidy is for people leaving Google Photos with wrong dates, repeated albu
 
 - Imports an extracted folder or one or more Takeout ZIP files.
 - Matches photos to standard, shortened, and duplicate-album Google JSON filenames.
-- Adds the Google date and location to JPEG and PNG metadata.
+- Adds the Google date and any location in its Google JSON file to JPEG and PNG metadata.
 - Keeps photo payload bytes and copies HEIC, HEIF, and video files unchanged.
 - Can skip exact copies and rename repaired files by date.
 - Adds `takeout-tidy-manifest.json` with one decision for each media file.

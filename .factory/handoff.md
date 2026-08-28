@@ -1,69 +1,91 @@
-# Review handoff — Takeout Tidy
+# Repair handoff — Takeout Tidy
 
 Date: 2026-08-28
 
-Work order: `takeout-photo-metadata-fixer-review-1`
+Work order: `takeout-photo-metadata-fixer-polish-1`
 
-Reviewed candidate: `c4a54d9734a7096016422f7946ea98f0a9215d93`
+Reviewed base: `67d9c44a9cf811cccb2f857cf6db2b7fc6f019d5`
+
+Repair commits: `45983c6`, `433402a`
 
 Live URL: <https://takeout-photo-metadata-fixer.sociobot.in/>
 
 ## Outcome
 
-Adversarial first-read verdict: **FAIL**.
+All blocking and product-specific findings in `review-1.md` are resolved.
 
-The detailed report is in [review-1.md](review-1.md). No product code was
-changed. The review found four blocking issues:
+- The first screen now names people leaving Google Photos, explains the result in 18 words, and pairs the sample and real actions with the next-step note.
+- `/demo` and `/?demo=1` open an already-scanned sample with JPEG, GPS PNG, exact album copy, unmatched JPEG, HEIC, and MP4 cases.
+- Demo mode is memory-only. Its persistent banner provides **Reset demo** and **Start for real** without reading or changing real IndexedDB or localStorage.
+- Fifteen atomic claims are registered in `.factory/claims.json`, each with exactly one `@claim:<id>` test.
+- `/demo`, `/privacy/`, and `/terms/` are real focused routes with distinct titles, descriptions, canonicals, and social metadata.
+- Unknown URLs receive HTTP 404 from the static host and render the designed archive-label 404 with a return link.
+- Legal and offline styling is self-hosted and CSP-safe. Every route uses the product header, footer, build id, skip link, and paper archive visual grammar.
+- The product publishes a real XML sitemap, sitemap-aware robots file, 1200 × 630 social preview, and 180 px Apple touch icon.
+- The drop target has real pointer/button activation. Result filters are at least 44 px high.
+- The landing order is repair tool → three steps → privacy → exact $12 one-time large-library price.
+- `.factory/copy-audit.md`, `.factory/demo.md`, and the verb-first 88-character catalog description are present.
 
-1. The phone and desktop first screen do not name the intended audience.
-2. There is no one-click sample demo, demo banner/reset, isolated storage, or
-   `.factory/demo.md`; `/demo` returns the real empty app and reads its IndexedDB
-   namespace.
-3. `.factory/claims.json` and `@claim:` tests are absent, leaving all landing
-   and README claims unlisted.
-4. Unknown paths and `/demo` are rewritten to the home page; there is no
-   designed 404 or correct deep-route state.
+## Clean-clone verification
 
-Additional findings cover CSP-blocked styles and console errors on Privacy,
-Terms, and Offline; missing route/social metadata and sitemap; inconsistent
-route shells/focus; incomplete landing structure/pricing; a non-clickable
-button-like drop zone; 40 px filter targets; long/jargon-heavy copy; and
-inconsistent terminology.
+Final verification used a fresh clone of commit `433402a` at `/tmp/tmp.Yh9Rbd7j6B/repo` with `npm ci --ignore-scripts`.
 
-## Verification performed
+Every registry command was run separately and passed:
 
-From the clean supplied checkout at the reviewed base:
+```text
+@claim:demo-sandbox          PASS
+@claim:local-processing      PASS
+@claim:jpeg-repair           PASS
+@claim:png-repair            PASS
+@claim:exact-copy-dedupe     PASS
+@claim:date-rename           PASS
+@claim:copy-only-media       PASS
+@claim:pixel-preservation    PASS
+@claim:export-log            PASS
+@claim:google-json-match     PASS
+@claim:offline-reload        PASS
+@claim:free-file-limit       PASS
+@claim:one-time-price        PASS
+@claim:folder-picker         PASS
+@claim:zip-import            PASS
+```
+
+Full clean-clone gates:
+
+- `npm test`: 15/15 passed across four files.
+- `npm run build`: passed; `dist/index.html`, service worker, manifest, offline page, sitemap, icons, and `staticwebapp.config.json` exist.
+- `npm run test:e2e`: 34/34 passed across desktop Chromium and Pixel 5 emulation.
+- Integrated axe checks: zero serious or critical findings on home, demo, privacy, terms, and 404 in both projects.
+- Offline claim: service-worker-controlled `/demo` reloaded and exported while the browser context was offline.
+- Privacy claim: the complete demo export made only same-origin requests with no request body; seeded real IndexedDB and localStorage snapshots stayed byte-for-byte unchanged.
+- File boundary claim: export remained enabled for 20,000 media files and was gated for 20,001.
+- Initial production assets: 54.0 kB raw JavaScript total (20.83 kB gzip) and 20.03 kB raw CSS (5.44 kB gzip).
+
+Additional verification:
+
+- Factory `verify-url.sh` against local `/demo`: title present, `lang=en`, one `h1`, main landmark, all images labelled, no unlabeled buttons, zero console errors.
+- Local Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 1.1 s, LCP 1.7 s, CLS 0, TBT 0 ms, 89 KiB transfer.
+- Azure Static Web Apps emulator: `/`, `/demo`, `/privacy/`, `/terms/`, `/sitemap.xml`, and `/offline.html` returned 200; `/not-a-route` returned 404 and rendered the correct client title and heading.
+
+## Deployment and live evidence
+
+`/opt/fleet/lib/deploy-static.sh takeout-photo-metadata-fixer dist` deployed the production `dist/` successfully to Azure Static Web Apps deployment `900b9d69-71ef-4fb4-bf98-4b1111ade898`. The custom domain reported `Ready` and HTTPS returned 200.
+
+- Live `verify-url.sh` on `/demo`: 801 ms network-idle load, no console errors, `lang=en`, one `h1`, main landmark, no missing alt text, and no unlabeled buttons.
+- Live routes: home/demo/privacy/terms/offline/sitemap returned 200; `/definitely-not-a-route` returned 404.
+- Live demo: repaired ZIP download passed, offline reload passed, and no external requests or console errors occurred during the demo/export/offline flow.
+- Live Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 1.1 s, LCP 1.4 s, CLS 0, TBT 0 ms, 89 KiB transfer.
+
+## Run locally
 
 ```sh
 npm ci
 npm test
 npm run build
+npm run test:claims
 npm run test:e2e
 ```
 
-Results:
+## Known limits
 
-- `npm test`: 12/12 passed.
-- `npm run build`: passed and produced `dist/`; application JavaScript was
-  46.89 kB raw and 18.78 kB gzip in total.
-- `npm run test:e2e`: 10/10 passed across desktop and mobile projects.
-- Live cold reads were performed at 390 × 844 and 1440 × 900.
-- Live link crawl found no dead rendered anchor, but `/sitemap.xml` incorrectly
-  returns home HTML.
-- Live axe checks found no serious/critical issues on Home, Privacy, or Terms.
-- Live console capture found CSP inline-style errors on Privacy and Terms.
-- A synthetic ZIP repair/export made no requests after load; initial requests
-  were same-origin, and offline reload worked after service-worker control.
-- A real preference written on `/` was readable from `/demo` in the same
-  `takeout-tidy` IndexedDB database, confirming missing sandbox isolation.
-- `rg '@claim|claim:' . tests src README.md` returned no matches, and the claim
-  registry file is missing.
-
-## Next steps
-
-Address the blocking findings in report order. The minimum re-review candidate
-needs a seeded `/demo` with isolated/resettable state, a complete claim registry
-with one tagged sandbox test per atomic claim, first-screen copy that names the
-audience and sample action, and real route/404 handling. Then resolve legal-page
-CSP styling, route metadata/sitemap/shell/focus, and the copy-audit flags before
-requesting another first-read review.
+No blocking finding remains. HEIC, HEIF, and video containers remain copy-only by the v1 product contract. Folder read/write uses browser directory APIs; ZIP import/export remains the portable path.

@@ -1,0 +1,14 @@
+{
+  "url": "https://takeout-photo-metadata-fixer.sociobot.in/?polish=3&cold=1",
+  "loadMs": 2783,
+  "errors": [],
+  "a11y": {
+    "title": "Takeout Tidy — repair Google Photos dates",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 1767
+  }
+}

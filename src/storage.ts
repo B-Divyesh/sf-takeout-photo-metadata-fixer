@@ -12,7 +12,13 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
+async function databaseExists() {
+  if (typeof indexedDB.databases !== 'function') return true;
+  return (await indexedDB.databases()).some((database) => database.name === DB_NAME);
+}
+
 async function get<T>(key: string): Promise<T | undefined> {
+  if (!(await databaseExists())) return undefined;
   const database = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE, 'readonly');

@@ -222,6 +222,7 @@ test('@claim:preview-before-write importing files reaches preview without writin
   await page.goto('/?demo=1');
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await page.getByRole('button', { name: 'Start for real' }).click();
+  await expect(page.getByRole('heading', { name: 'Repair your Google Photos Takeout' })).toBeVisible();
   const before = await storageSnapshot(page);
   const fixture = zipSync({
     'Takeout/Google Photos/preview.jpg': originalJpeg,

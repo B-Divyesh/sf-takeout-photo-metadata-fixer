@@ -123,13 +123,13 @@ async function storageSnapshot(page: Page) {
   });
 }
 
-test('@claim:demo-sandbox @claim:local-processing sample mode is populated, isolated, resettable, and makes no external request', async ({ page }) => {
+test('@claim:demo-sandbox @claim:local-processing @claim:no-account sample mode is populated, isolated, resettable, and makes no external request', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
     localStorage.setItem('claim-real-marker', 'unchanged');
     const database = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('takeout-tidy', 1); request.onupgradeneeded = () => request.result.createObjectStore('preferences'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     const transaction = database.transaction('preferences', 'readwrite');
-    transaction.objectStore('preferences').put({ deduplicate: false }, 'claim-real-options');
+    transaction.objectStore('preferences').put({ deduplicate: false, rename: true, renamePattern: 'date-original', organize: 'year-month', includeUnmatched: true }, 'options');
     await new Promise<void>((resolve, reject) => { transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); });
     database.close();
   });
@@ -138,6 +138,7 @@ test('@claim:demo-sandbox @claim:local-processing sample mode is populated, isol
   page.on('request', (request) => requests.push({ url: request.url(), body: request.postData() }));
   await page.goto('/?demo=1');
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.getByRole('button', { name: /sign in|log in|create account/i })).toHaveCount(0);
   await expect(page.getByText('Lisbon tram.jpg', { exact: true }).first()).toBeVisible();
   await expect(page.locator('input[name="deduplicate"]')).toBeChecked();
   await page.locator('input[name="deduplicate"]').uncheck();
@@ -149,6 +150,15 @@ test('@claim:demo-sandbox @claim:local-processing sample mode is populated, isol
   expect(await storageSnapshot(page)).toBe(before);
   expect(requests.every(({ url }) => new URL(url).origin === 'http://127.0.0.1:4173')).toBe(true);
   expect(requests.every(({ body }) => body === null)).toBe(true);
+
+  const fixture = zipSync({
+    'Takeout/Google Photos/real.jpg': originalJpeg,
+    'Takeout/Google Photos/real.jpg.json': new TextEncoder().encode(JSON.stringify({ title: 'real.jpg', photoTakenTime: { timestamp: '1600000000' } }))
+  });
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await page.locator('#zip-input').setInputFiles({ name: 'real.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture) });
+  await expect(page.locator('input[name="deduplicate"]')).not.toBeChecked();
+  expect(await storageSnapshot(page)).toBe(before);
 });
 
 test('@claim:jpeg-repair @claim:png-repair @claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:pixel-preservation @claim:export-log @claim:folder-export the sample export has every promised repair result', async ({ page }) => {

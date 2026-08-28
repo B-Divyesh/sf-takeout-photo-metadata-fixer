@@ -146,8 +146,27 @@ function bind() {
   document.querySelector('#export-folder')?.addEventListener('click', exportFolder); document.querySelector('#export-zip')?.addEventListener('click', exportZip); document.querySelector('#verify-license')?.addEventListener('click', activateLicense); document.querySelector('#export-settings')?.addEventListener('click', downloadSettings); document.querySelector<HTMLInputElement>('#import-settings')?.addEventListener('change', uploadSettings);
 }
 
-function navigate(url: URL) { history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`); const next = routeFromLocation(); if (next === 'demo' && !demoMode) { void enterDemo(true); return; } route = next; demoMode = route === 'demo'; scan = undefined; completedMessage = ''; errorMessage = ''; render(true); window.scrollTo(0, 0); }
+function navigate(url: URL) { history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`); void enterRoute(routeFromLocation(), true); }
 async function enterDemo(focus = false) { route = 'demo'; demoMode = true; options = { ...defaults }; licensed = false; completedMessage = ''; errorMessage = ''; filter = 'all'; query = ''; scan = await createDemoScan(); render(focus); window.scrollTo(0, 0); }
+
+async function enterRoute(next: Route, focus = false) {
+  if (next === 'demo') { await enterDemo(focus); return; }
+  route = next;
+  demoMode = false;
+  scan = undefined;
+  completedMessage = '';
+  errorMessage = '';
+  filter = 'all';
+  query = '';
+  if (route === 'home') {
+    const [saved, session] = await Promise.all([loadOptions(), loadSession()]);
+    options = { ...defaults, ...saved };
+    lastSession = session;
+    licensed = hasLargeLibraryLicense();
+  }
+  render(focus);
+  window.scrollTo(0, 0);
+}
 async function resetDemo() { options = { ...defaults }; completedMessage = ''; errorMessage = ''; filter = 'all'; query = ''; scan = await createDemoScan(); render(); showToast('Sample data reset.'); }
 async function startReal() { history.pushState({}, '', '/'); route = 'home'; demoMode = false; scan = undefined; options = { ...defaults }; const [saved, session] = await Promise.all([loadOptions(), loadSession()]); options = { ...defaults, ...saved }; lastSession = session; licensed = hasLargeLibraryLicense(); render(true); window.scrollTo(0, 0); }
 
@@ -168,7 +187,7 @@ function showToast(message: string, action?: { label: string; run: () => void })
 function showUpdateToast(worker: ServiceWorker) { if (waitingWorker === worker) return; waitingWorker = worker; showToast('A new version is ready.', { label: 'Reload now', run: () => { reloadAfterUpdate = true; showToast('Updating Takeout Tidy…'); worker.postMessage({ type: 'SKIP_WAITING' }); } }); }
 async function registerServiceWorker() { if (!('serviceWorker' in navigator)) return; try { const registration = await navigator.serviceWorker.register('/sw.js'); const notify = () => { if (registration.waiting && navigator.serviceWorker.controller) showUpdateToast(registration.waiting); }; notify(); registration.addEventListener('updatefound', () => { const worker = registration.installing; worker?.addEventListener('statechange', () => { if (worker.state === 'installed') notify(); }); }); navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloadAfterUpdate) window.location.reload(); }); } catch { /* Online use remains available. */ } }
 
-window.addEventListener('popstate', () => { const next = routeFromLocation(); if (next === 'demo') void enterDemo(true); else { route = next; demoMode = false; scan = undefined; render(true); window.scrollTo(0, 0); } });
+window.addEventListener('popstate', () => { void enterRoute(routeFromLocation(), true); });
 window.addEventListener('offline', () => showToast('You are offline. Local repair still works.')); window.addEventListener('online', () => showToast('You are back online.'));
 async function initialise() { if (demoMode) await enterDemo(true); else { licensed = hasLargeLibraryLicense(); if (route === 'home') { const [saved, session] = await Promise.all([loadOptions(), loadSession()]); options = { ...defaults, ...saved }; lastSession = session; } render(route !== 'home'); } void registerServiceWorker(); }
 void initialise();

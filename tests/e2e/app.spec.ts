@@ -182,6 +182,25 @@ test('demo, legal, and not-found routes have distinct metadata and focus', async
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/definitely-not-a-route$/);
 });
 
+test('Takeout repair navigation reaches its section and Back restores the prior route and scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  for (const start of ['/', '/demo']) {
+    await page.goto(start);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await page.getByRole('link', { name: 'Takeout repair' }).click();
+
+    await expect(page).toHaveURL(/\/#how-it-works$/);
+    await expect(page.locator('#how-it-works')).toBeInViewport();
+    await expect(page.getByRole('heading', { name: 'How Takeout repair works' })).toBeFocused();
+
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${start === '/' ? '/$' : '/demo$'}`));
+    await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  }
+});
+
 test('legal and offline pages load without console errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });

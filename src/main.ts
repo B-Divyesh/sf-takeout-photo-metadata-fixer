@@ -8,7 +8,7 @@ import type { ProgressUpdate, RepairOptions, ScanResult, SessionSummary, SourceF
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const FREE_FILE_LIMIT = 20_000;
-const BUILD_ID = '1.0.3 · polish 3';
+const BUILD_ID = '1.0.4 · polish 4';
 const SITE = 'https://takeout-photo-metadata-fixer.sociobot.in';
 const defaults: RepairOptions = { deduplicate: true, rename: true, renamePattern: 'date-original', organize: 'year-month', includeUnmatched: true };
 type Route = 'home' | 'demo' | 'privacy' | 'terms' | 'not-found';
@@ -75,7 +75,7 @@ function setMetadata() {
 
 function shell(content: string) {
   return `${demoMode ? `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved</strong><span><button id="reset-demo" type="button">Reset demo</button><button id="start-real" type="button">Start for real</button></span></aside>` : ''}
-    <header class="site-header"><a class="brand" href="/" data-route aria-label="Takeout Tidy home"><span class="brand-mark" aria-hidden="true">${icon('photo')}</span><span>Takeout Tidy</span></a><nav aria-label="Primary navigation"><a href="/demo" data-route>Demo</a><a href="/#how-it-works">Takeout repair</a><a href="/privacy/" data-route>Privacy</a></nav></header>
+    <header class="site-header"><a class="brand" href="/" data-route aria-label="Takeout Tidy home"><span class="brand-mark" aria-hidden="true">${icon('photo')}</span><span>Takeout Tidy</span></a><nav aria-label="Primary navigation"><a href="/demo" data-route>Demo</a><a href="/#how-it-works" data-route>Takeout repair</a><a href="/privacy/" data-route>Privacy</a></nav></header>
     ${content}
     <footer class="site-footer"><div><span class="brand-footer">Takeout Tidy</span><p>Repair Google Photos dates on your device.</p></div><nav aria-label="Footer navigation"><a href="/demo" data-route>Demo</a><a href="/privacy/" data-route>Privacy</a><a href="/terms/" data-route>Terms</a>${route === 'home' ? '<button class="text-button" id="export-settings">Export settings</button><label class="text-button file-label">Import settings<input id="import-settings" type="file" accept="application/json" /></label>' : ''}</nav><p class="provenance">Built by Param Factory · Paper archive bench · Build ${BUILD_ID}</p></footer>
     <div class="route-status visually-hidden" role="status" aria-live="polite"></div><div id="toast" class="toast" role="status" aria-live="polite" hidden></div>`;
@@ -85,7 +85,7 @@ function homeView() {
   return `<main id="main"><section class="hero" aria-labelledby="page-title"><div class="hero-copy"><p class="eyebrow"><span></span> Private photo repair</p><h1 id="page-title" tabindex="-1">Repair your Google Photos Takeout</h1><p class="lede">For people leaving Google Photos, restore dates and locations saved in Google JSON files, remove exact copies, and rename files.</p><div class="hero-actions"><a class="button primary" href="/demo" data-route>Try it with sample data ${icon('arrow')}</a><a class="button quiet" href="#repair">Choose your Takeout files</a></div><p class="action-note">Preview matches before anything is written.</p><ul class="hero-facts"><li>${icon('shield')} Photos stay on this device.</li><li>${icon('check')} Works offline after the first load.</li><li>${icon('check')} Free for up to 20,000 files.</li></ul></div>
     <figure class="hero-art"><picture><source srcset="/assets/hero-paper-archive-640.webp 640w, /assets/hero-paper-archive.webp 1024w" sizes="(max-width: 850px) calc(100vw - 28px), 52vw" type="image/webp"/><img src="/assets/hero-paper-archive.jpg" width="1024" height="683" alt="Paper photos and Google JSON cards enter a sorter and leave in date order." fetchpriority="high" decoding="async"/></picture><figcaption>Takeout files in. Photos sorted by date, with exact copies removed.</figcaption></figure></section>
     ${repairSection()}
-    <section class="how" id="how-it-works" aria-labelledby="how-title"><p class="eyebrow"><span></span> Repair in three steps</p><h2 id="how-title">How Takeout repair works</h2><ol><li><span class="paper-number">01</span><div><h3>Match photos to Google JSON files</h3><p>Matches JSON files, shortened Google filenames, and duplicate album filenames.</p></div></li><li><span class="paper-number">02</span><div><h3>Keep the original photo pixels</h3><p>Adds the Google date and any location in its Google JSON file to each supported photo.</p></div></li><li><span class="paper-number">03</span><div><h3>Export repaired files</h3><p>Skips exact copies, renames files by date, and logs each result.</p></div></li></ol></section>
+    <section class="how" id="how-it-works" aria-labelledby="how-title"><p class="eyebrow"><span></span> Repair in three steps</p><h2 id="how-title" tabindex="-1">How Takeout repair works</h2><ol><li><span class="paper-number">01</span><div><h3>Match photos to Google JSON files</h3><p>Matches JSON files, shortened Google filenames, and duplicate album filenames.</p></div></li><li><span class="paper-number">02</span><div><h3>Keep the original photo pixels</h3><p>Adds the Google date and any location in its Google JSON file to each supported photo.</p></div></li><li><span class="paper-number">03</span><div><h3>Export repaired files</h3><p>Skips exact copies, renames files by date, and logs each result.</p></div></li></ol></section>
     <section class="privacy-strip" aria-labelledby="privacy-title"><div class="cut-shield">${icon('shield')}</div><div><h2 id="privacy-title">Your photos stay on this device</h2><p>The repair runs in your browser. It needs no account and sends no photo, filename, or Google JSON data to a server.</p></div><a href="/privacy/" data-route>Read the privacy policy</a></section>
     <section class="price-strip" aria-labelledby="price-title"><p class="kicker">Large libraries</p><h2 id="price-title">Repair up to 20,000 files free</h2><p>A $12 one-time unlock removes the file limit. There is no subscription.</p><a class="button secondary" href="${BUY_URL}" rel="external">Buy the $12 unlock</a></section>
     ${lastSession ? `<aside class="last-run"><strong>Last export</strong><span>${new Date(lastSession.at).toLocaleDateString()} · ${formatNumber(lastSession.exportedCount)} files written from “${escapeHtml(lastSession.sourceLabel)}”</span></aside>` : ''}</main>`;
@@ -146,11 +146,50 @@ function bind() {
   document.querySelector('#export-folder')?.addEventListener('click', exportFolder); document.querySelector('#export-zip')?.addEventListener('click', exportZip); document.querySelector('#verify-license')?.addEventListener('click', activateLicense); document.querySelector('#export-settings')?.addEventListener('click', downloadSettings); document.querySelector<HTMLInputElement>('#import-settings')?.addEventListener('change', uploadSettings);
 }
 
-function navigate(url: URL) { history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`); void enterRoute(routeFromLocation(), true); }
-async function enterDemo(focus = false) { route = 'demo'; demoMode = true; options = { ...defaults }; licensed = false; completedMessage = ''; errorMessage = ''; filter = 'all'; query = ''; scan = await createDemoScan(); render(focus); window.scrollTo(0, 0); }
+function rememberScroll() {
+  const state = typeof history.state === 'object' && history.state ? history.state : {};
+  history.replaceState({ ...state, scrollY: window.scrollY }, '');
+}
 
-async function enterRoute(next: Route, focus = false) {
-  if (next === 'demo') { await enterDemo(focus); return; }
+function announceAndFocus(element: HTMLElement) {
+  element.focus({ preventScroll: true });
+  const status = document.querySelector<HTMLElement>('.route-status');
+  if (status) status.textContent = element.textContent?.trim() ?? '';
+}
+
+function reachHashTarget(focus = false) {
+  if (!location.hash) return false;
+  let id: string;
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return false; }
+  const target = document.getElementById(id);
+  if (!target) return false;
+  target.scrollIntoView({ block: 'start' });
+  const heading = target.matches('h1, h2, h3') ? target : target.querySelector<HTMLElement>('h1, h2, h3');
+  if (focus && heading) announceAndFocus(heading);
+  history.replaceState({ ...(history.state ?? {}), scrollY: window.scrollY }, '');
+  return true;
+}
+
+function finishNavigation(focus = false, restoredScroll?: number) {
+  if (restoredScroll !== undefined) {
+    window.scrollTo(0, restoredScroll);
+    return;
+  }
+  if (!reachHashTarget(focus)) window.scrollTo(0, 0);
+}
+
+function navigate(url: URL) {
+  rememberScroll();
+  const previousRoute = route;
+  history.pushState({ scrollY: 0 }, '', `${url.pathname}${url.search}${url.hash}`);
+  const next = routeFromLocation();
+  if (next === previousRoute && location.hash && reachHashTarget(true)) return;
+  void enterRoute(next, true);
+}
+async function enterDemo(focus = false, restoredScroll?: number) { route = 'demo'; demoMode = true; options = { ...defaults }; licensed = false; completedMessage = ''; errorMessage = ''; filter = 'all'; query = ''; scan = await createDemoScan(); render(focus); finishNavigation(focus, restoredScroll); }
+
+async function enterRoute(next: Route, focus = false, restoredScroll?: number) {
+  if (next === 'demo') { await enterDemo(focus, restoredScroll); return; }
   route = next;
   demoMode = false;
   scan = undefined;
@@ -165,7 +204,7 @@ async function enterRoute(next: Route, focus = false) {
     licensed = hasLargeLibraryLicense();
   }
   render(focus);
-  window.scrollTo(0, 0);
+  finishNavigation(focus, restoredScroll);
 }
 async function resetDemo() { options = { ...defaults }; completedMessage = ''; errorMessage = ''; filter = 'all'; query = ''; scan = await createDemoScan(); render(); showToast('Sample data reset.'); }
 async function startReal() { history.pushState({}, '', '/'); route = 'home'; demoMode = false; scan = undefined; options = { ...defaults }; const [saved, session] = await Promise.all([loadOptions(), loadSession()]); options = { ...defaults, ...saved }; lastSession = session; licensed = hasLargeLibraryLicense(); render(true); window.scrollTo(0, 0); }
@@ -187,7 +226,7 @@ function showToast(message: string, action?: { label: string; run: () => void })
 function showUpdateToast(worker: ServiceWorker) { if (waitingWorker === worker) return; waitingWorker = worker; showToast('A new version is ready.', { label: 'Reload now', run: () => { reloadAfterUpdate = true; showToast('Updating Takeout Tidy…'); worker.postMessage({ type: 'SKIP_WAITING' }); } }); }
 async function registerServiceWorker() { if (!('serviceWorker' in navigator)) return; try { const registration = await navigator.serviceWorker.register('/sw.js'); const notify = () => { if (registration.waiting && navigator.serviceWorker.controller) showUpdateToast(registration.waiting); }; notify(); registration.addEventListener('updatefound', () => { const worker = registration.installing; worker?.addEventListener('statechange', () => { if (worker.state === 'installed') notify(); }); }); navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloadAfterUpdate) window.location.reload(); }); } catch { /* Online use remains available. */ } }
 
-window.addEventListener('popstate', () => { void enterRoute(routeFromLocation(), true); });
+window.addEventListener('popstate', (event) => { void enterRoute(routeFromLocation(), true, typeof event.state?.scrollY === 'number' ? event.state.scrollY : 0); });
 window.addEventListener('offline', () => showToast('You are offline. Local repair still works.')); window.addEventListener('online', () => showToast('You are back online.'));
-async function initialise() { if (demoMode) await enterDemo(true); else { licensed = hasLargeLibraryLicense(); if (route === 'home') { const [saved, session] = await Promise.all([loadOptions(), loadSession()]); options = { ...defaults, ...saved }; lastSession = session; } render(route !== 'home'); } void registerServiceWorker(); }
+async function initialise() { history.scrollRestoration = 'manual'; history.replaceState({ ...(history.state ?? {}), scrollY: window.scrollY }, ''); if (demoMode) await enterDemo(true); else { licensed = hasLargeLibraryLicense(); if (route === 'home') { const [saved, session] = await Promise.all([loadOptions(), loadSession()]); options = { ...defaults, ...saved }; lastSession = session; } render(route !== 'home'); finishNavigation(Boolean(location.hash)); } void registerServiceWorker(); }
 void initialise();

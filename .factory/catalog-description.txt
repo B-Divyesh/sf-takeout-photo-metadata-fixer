@@ -1,1 +1,1 @@
-Repair Google Photos Takeout dates, saved locations, exact copies, and filenames without uploading photos.
+Repair Google Photos Takeout dates, locations, exact copies, and filenames on your device.

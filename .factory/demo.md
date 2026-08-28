@@ -8,7 +8,7 @@ The demo opens directly on a populated inspection screen. Its in-memory sample c
 - a PNG with a Google date and Cornwall location;
 - an exact JPEG album copy;
 - an unmatched JPEG;
-- a matched HEIC file and matched MP4 that are copied unchanged.
+- matched HEIC, HEIF, and MP4 files that are copied unchanged.
 
 The banner remains visible throughout demo mode. **Reset demo** recreates the original sample and options. **Start for real** discards demo state and then loads the real settings namespace.
 

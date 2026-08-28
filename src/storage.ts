@@ -17,8 +17,12 @@ async function get<T>(key: string): Promise<T | undefined> {
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE, 'readonly');
     const request = transaction.objectStore(STORE).get(key);
-    request.onsuccess = () => resolve(request.result as T | undefined);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const value = request.result as T | undefined;
+      transaction.oncomplete = () => { database.close(); resolve(value); };
+    };
+    request.onerror = () => { database.close(); reject(request.error); };
+    transaction.onerror = () => { database.close(); reject(transaction.error); };
   });
 }
 
@@ -27,8 +31,8 @@ async function set<T>(key: string, value: T): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE, 'readwrite');
     transaction.objectStore(STORE).put(value, key);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
+    transaction.oncomplete = () => { database.close(); resolve(); };
+    transaction.onerror = () => { database.close(); reject(transaction.error); };
   });
 }
 

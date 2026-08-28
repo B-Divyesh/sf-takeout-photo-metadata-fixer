@@ -10,7 +10,7 @@ Takeout Tidy is for people leaving Google Photos with wrong dates, repeated albu
 ## What Takeout Tidy repairs
 
 - Imports an extracted folder or one or more Takeout ZIP files.
-- Matches photos to standard Google JSON files and duplicate album filenames.
+- Matches photos to standard, shortened, and duplicate-album Google JSON filenames.
 - Adds the Google date and location to JPEG and PNG metadata.
 - Keeps photo payload bytes and copies HEIC, HEIF, and video files unchanged.
 - Can skip exact copies and rename repaired files by date.
@@ -42,18 +42,17 @@ npm run test:claims
 npm run test:e2e
 ```
 
-The production build is in `dist/`. Its root contains `index.html`, the manifest, service worker, offline page, sitemap, and static-host configuration.
+The production build is in `dist/`. Its root contains `index.html`, the manifest, service worker, offline page, sitemap, and static-host configuration. The static-host file sets the content policy, frame protection, permissions, file types, and cache rules.
 
 ## Deploy
 
-Deploy `dist/` as a static site with address-bar fallback to `index.html`. The checked-in container serves the same files on port 8080.
+Deploy `dist/` as a static site with address-bar fallback to `index.html`.
 
 ```sh
-docker build -t takeout-tidy .
-docker run --rm -p 8080:8080 takeout-tidy
+/opt/fleet/lib/deploy-static.sh takeout-photo-metadata-fixer dist
 ```
 
-The large-library checkout uses the Sociobot billing API. Set these variables only when the factory supplies different registered endpoints:
+The buy link and license check use Sociobot endpoints. The app does not load a payment-provider SDK. Set these variables only for registered replacements:
 
 - `VITE_SOCIOBOT_BUY_URL`
 - `VITE_SOCIOBOT_LICENSE_VERIFY_URL`

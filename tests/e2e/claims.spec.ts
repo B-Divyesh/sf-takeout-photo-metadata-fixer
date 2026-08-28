@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { unzipSync, zipSync } from 'fflate';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 
 async function downloadDemo(page: Page) {
   await page.goto('/demo');
@@ -28,12 +28,78 @@ function pngExif(bytes: Uint8Array) {
   throw new Error('missing PNG eXIf chunk');
 }
 
-function hasGpsDirectory(tiff: Uint8Array) {
+type IfdEntry = { offset: number; type: number; count: number; value: number };
+
+function entriesAt(tiff: Uint8Array, offset: number) {
   const view = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
-  const count = view.getUint16(8, true);
-  for (let index = 0; index < count; index += 1) if (view.getUint16(10 + index * 12, true) === 0x8825) return true;
-  return false;
+  const count = view.getUint16(offset, true);
+  const entries = new Map<number, IfdEntry>();
+  for (let index = 0; index < count; index += 1) {
+    const entryOffset = offset + 2 + index * 12;
+    entries.set(view.getUint16(entryOffset, true), {
+      offset: entryOffset,
+      type: view.getUint16(entryOffset + 2, true),
+      count: view.getUint32(entryOffset + 4, true),
+      value: view.getUint32(entryOffset + 8, true)
+    });
+  }
+  return entries;
 }
+
+function asciiValue(tiff: Uint8Array, entry: IfdEntry) {
+  const offset = entry.count <= 4 ? entry.offset + 8 : entry.value;
+  return new TextDecoder().decode(tiff.slice(offset, offset + entry.count)).replace(/\0+$/, '');
+}
+
+function tiffValues(tiff: Uint8Array) {
+  const view = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
+  const ifd0 = entriesAt(tiff, view.getUint32(4, true));
+  const exif = entriesAt(tiff, ifd0.get(0x8769)!.value);
+  const gps = entriesAt(tiff, ifd0.get(0x8825)!.value);
+  const rational = (offset: number) => view.getUint32(offset, true) / view.getUint32(offset + 4, true);
+  const coordinate = (entry: IfdEntry) => rational(entry.value) + rational(entry.value + 8) / 60 + rational(entry.value + 16) / 3600;
+  const latitude = coordinate(gps.get(0x0002)!);
+  const longitude = coordinate(gps.get(0x0004)!);
+  return {
+    modified: asciiValue(tiff, ifd0.get(0x0132)!),
+    original: asciiValue(tiff, exif.get(0x9003)!),
+    digitized: asciiValue(tiff, exif.get(0x9004)!),
+    latitude: tiff[gps.get(0x0001)!.offset + 8] === 83 ? -latitude : latitude,
+    longitude: tiff[gps.get(0x0003)!.offset + 8] === 87 ? -longitude : longitude,
+    altitude: rational(gps.get(0x0006)!.value) * (tiff[gps.get(0x0005)!.offset + 8] === 1 ? -1 : 1)
+  };
+}
+
+function jpegTiff(bytes: Uint8Array) {
+  expect([...bytes.slice(0, 12)]).toEqual([0xff, 0xd8, 0xff, 0xe1, expect.any(Number), expect.any(Number), 69, 120, 105, 102, 0, 0]);
+  return bytes.slice(12);
+}
+
+function removeInsertedJpegExif(bytes: Uint8Array) {
+  const segmentLength = (bytes[4] << 8) | bytes[5];
+  return Uint8Array.from([bytes[0], bytes[1], ...bytes.slice(4 + segmentLength)]);
+}
+
+function removePngExif(bytes: Uint8Array) {
+  const chunks = [bytes.slice(0, 8)];
+  let offset = 8;
+  while (offset + 12 <= bytes.length) {
+    const length = new DataView(bytes.buffer, bytes.byteOffset + offset, 4).getUint32(0, false);
+    const end = offset + length + 12;
+    const type = new TextDecoder().decode(bytes.slice(offset + 4, offset + 8));
+    if (type !== 'eXIf') chunks.push(bytes.slice(offset, end));
+    offset = end;
+    if (type === 'IEND') break;
+  }
+  const size = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(size);
+  let cursor = 0;
+  for (const chunk of chunks) { result.set(chunk, cursor); cursor += chunk.length; }
+  return result;
+}
+
+const originalJpeg = Uint8Array.from(Buffer.from('/9j/4AAQSkZJRgABAQAAAAAAAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAACAAIDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAAB//EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAH/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AewYU3//Z', 'base64'));
+const originalPng = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGUExURVqelv////7Rk0UAAAABYktHRAH/Ai3eAAAAB3RJTUUH6ggcCjEEnRN33wAAAAxJREFUCNdjYGBgAAAABAABJzQnCgAAAABJRU5ErkJggg==', 'base64'));
 
 async function storageSnapshot(page: Page) {
   return page.evaluate(async () => {
@@ -85,32 +151,66 @@ test('@claim:demo-sandbox @claim:local-processing sample mode is populated, isol
   expect(requests.every(({ body }) => body === null)).toBe(true);
 });
 
-test('@claim:jpeg-repair @claim:png-repair @claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:pixel-preservation @claim:export-log the sample export has every promised repair result', async ({ page }) => {
+test('@claim:jpeg-repair @claim:png-repair @claim:exact-copy-dedupe @claim:date-rename @claim:copy-only-media @claim:pixel-preservation @claim:export-log @claim:folder-export the sample export has every promised repair result', async ({ page }) => {
+  await page.addInitScript(() => {
+    const writes: Record<string, number[] | string> = {};
+    (window as unknown as { claimFolderWrites: typeof writes }).claimFolderWrites = writes;
+    const directory = (prefix = ''): unknown => ({
+      kind: 'directory',
+      name: prefix.split('/').pop() || 'chosen-folder',
+      getDirectoryHandle: async (name: string) => directory(`${prefix}${prefix ? '/' : ''}${name}`),
+      getFileHandle: async (name: string) => ({
+        createWritable: async () => ({
+          write: async (data: Uint8Array | string) => { writes[`${prefix}${prefix ? '/' : ''}${name}`] = typeof data === 'string' ? data : [...data]; },
+          close: async () => undefined
+        })
+      })
+    });
+    (window as unknown as { showDirectoryPicker: () => Promise<unknown> }).showDirectoryPicker = async () => directory();
+  });
   const archive = await downloadDemo(page);
   const jpeg = findEntry(archive, '2022-07-03_07-45-00_Lisbon tram.jpg');
   const png = findEntry(archive, '2022-09-03_14-30-00_Coast walk.png');
-  const jpegText = new TextDecoder().decode(jpeg);
-  const pngTiff = pngExif(png);
-  expect(jpegText).toContain('2022:07:03 07:45:00');
-  expect(new TextDecoder().decode(pngTiff)).toContain('2022:09:03 14:30:00');
-  expect(hasGpsDirectory(jpeg.slice(12))).toBe(true);
-  expect(hasGpsDirectory(pngTiff)).toBe(true);
-  expect([...jpeg.slice(-2)]).toEqual([0xff, 0xd9]);
-  expect(new TextDecoder().decode(png.slice(-8, -4))).toBe('IEND');
+  const jpegMetadata = tiffValues(jpegTiff(jpeg));
+  const pngMetadata = tiffValues(pngExif(png));
+  expect(jpegMetadata).toMatchObject({ modified: '2022:07:03 07:45:00', original: '2022:07:03 07:45:00', digitized: '2022:07:03 07:45:00' });
+  expect(jpegMetadata.latitude).toBeCloseTo(38.7139, 5);
+  expect(jpegMetadata.longitude).toBeCloseTo(-9.1394, 5);
+  expect(jpegMetadata.altitude).toBe(18);
+  expect(pngMetadata).toMatchObject({ modified: '2022:09:03 14:30:00', original: '2022:09:03 14:30:00', digitized: '2022:09:03 14:30:00' });
+  expect(pngMetadata.latitude).toBeCloseTo(50.1188, 5);
+  expect(pngMetadata.longitude).toBeCloseTo(-5.5371, 5);
+  expect(pngMetadata.altitude).toBe(18);
+  expect(removeInsertedJpegExif(jpeg)).toEqual(originalJpeg);
+  expect(removePngExif(png)).toEqual(originalPng);
   expect(new TextDecoder().decode(findEntry(archive, '.mp4'))).toBe('sample-video-container');
   expect(new TextDecoder().decode(findEntry(archive, '.heic'))).toBe('sample-heic-container');
+  expect(new TextDecoder().decode(findEntry(archive, '.heif'))).toBe('sample-heif-container');
   const manifest = JSON.parse(new TextDecoder().decode(archive['takeout-tidy-manifest.json'])) as { files: Array<{ status: string; input: string; output?: string }> };
-  expect(manifest.files).toHaveLength(6);
+  expect(manifest.files).toHaveLength(7);
   expect(manifest.files.filter((entry) => entry.status === 'skipped-duplicate')).toHaveLength(1);
-  expect(manifest.files.filter((entry) => entry.status === 'copied-container-unchanged')).toHaveLength(2);
+  expect(manifest.files.filter((entry) => entry.status === 'copied-container-unchanged')).toHaveLength(3);
   expect(manifest.files.every((entry) => Boolean(entry.status && entry.input))).toBe(true);
+  expect(manifest.files.find((entry) => entry.input.endsWith('Lisbon tram.jpg'))?.output).toMatch(/^2022\/07\/2022-07-03_07-45-00_/);
+  expect(manifest.files.find((entry) => entry.input.endsWith('Coast walk.png'))?.output).toMatch(/^2022\/09\/2022-09-03_14-30-00_/);
+
+  await page.getByRole('button', { name: 'Write to a folder' }).click();
+  await expect(page.getByText('Repaired export complete.')).toBeVisible();
+  const writes = await page.evaluate(() => (window as unknown as { claimFolderWrites: Record<string, number[] | string> }).claimFolderWrites);
+  const manifestPath = Object.keys(writes).find((path) => path.endsWith('/takeout-tidy-manifest.json'));
+  expect(manifestPath).toBeTruthy();
+  const folderManifest = JSON.parse(writes[manifestPath!] as string) as { files: unknown[] };
+  expect(folderManifest.files).toHaveLength(7);
+  expect(Object.keys(writes).filter((path) => !path.endsWith('takeout-tidy-manifest.json'))).toHaveLength(6);
 });
 
-test('@claim:google-json-match sample matches standard and duplicate-album Google JSON filenames', async ({ page }) => {
+test('@claim:google-json-match sample pairs standard, shortened, and duplicate-album Google JSON filenames', async ({ page }) => {
   await page.goto('/demo');
-  await expect(page.getByText('Lisbon tram.jpg.supplemental-metadata.json', { exact: true })).toBeVisible();
-  await expect(page.getByText('Lisbon tram (1).jpg.json', { exact: true })).toBeVisible();
-  await expect(page.getByText('5', { exact: true }).first()).toBeVisible();
+  const rows = page.locator('.file-row:not(.file-header)');
+  await expect(rows.filter({ hasText: 'Lisbon tram.jpg' }).first()).toContainText('Lisbon tram.jpg.supplemental-metadata.json');
+  await expect(rows.filter({ hasText: 'Lisbon tram (1).jpg' })).toContainText('Lisbon tram (1).jpg.json');
+  await expect(rows.filter({ hasText: 'Portrait from the long summer evening by the sea.heic' })).toContainText('Portrait from the long summer evening.json');
+  await expect(page.getByText('6', { exact: true }).first()).toBeVisible();
 });
 
 test('@claim:offline-reload repairs and exports the sample after the connection is disabled', async ({ page, context }) => {
@@ -134,7 +234,8 @@ test('@claim:free-file-limit allows 20,000 files and gates 20,001 files', async 
     for (let index = 0; index < count; index += 1) entries[`Takeout/Google Photos/p${String(index).padStart(5, '0')}.jpg`] = new Uint8Array([0xff, 0xd8, 0xff, 0xd9, index & 255]);
     return Buffer.from(zipSync(entries, { level: 0 }));
   };
-  await page.goto('/');
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Start for real' }).click();
   await page.locator('#zip-input').setInputFiles({ name: 'limit.zip', mimeType: 'application/zip', buffer: makeZip(20_000) });
   await expect(page.getByRole('heading', { name: 'Inspect the matches' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Download repaired ZIP' })).toBeEnabled();
@@ -145,7 +246,8 @@ test('@claim:free-file-limit allows 20,000 files and gates 20,001 files', async 
 });
 
 test('@claim:one-time-price shows the exact license price and Sociobot checkout', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Start for real' }).click();
   await expect(page.getByText('A $12 one-time unlock removes the file limit. There is no subscription.')).toBeVisible();
   const link = page.getByRole('link', { name: 'Buy the $12 unlock' });
   await expect(link).toHaveAttribute('href', 'https://sociobot.in/buy?product=takeout-photo-metadata-fixer');
@@ -170,14 +272,97 @@ test('@claim:folder-picker imports a selected folder and requests access only af
   await expect(page.getByText('folder-photo.jpg', { exact: true }).first()).toBeVisible();
 });
 
-test('@claim:zip-import imports a Takeout ZIP and reaches the preview', async ({ page }) => {
-  const fixture = zipSync({
+test('@claim:zip-import imports multiple Takeout ZIP files into one preview', async ({ page }) => {
+  const first = zipSync({
     'Takeout/Google Photos/one.jpg': new Uint8Array([0xff, 0xd8, 0xff, 0xd9]),
     'Takeout/Google Photos/one.jpg.json': new TextEncoder().encode(JSON.stringify({ title: 'one.jpg', photoTakenTime: { timestamp: '1600000000' } }))
   });
+  const second = zipSync({
+    'Takeout/Google Photos/two.png': originalPng,
+    'Takeout/Google Photos/two.png.json': new TextEncoder().encode(JSON.stringify({ title: 'two.png', photoTakenTime: { timestamp: '1600000001' } }))
+  });
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Start for real' }).click();
-  await page.locator('#zip-input').setInputFiles({ name: 'takeout.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture) });
+  await page.locator('#zip-input').setInputFiles([
+    { name: 'takeout-one.zip', mimeType: 'application/zip', buffer: Buffer.from(first) },
+    { name: 'takeout-two.zip', mimeType: 'application/zip', buffer: Buffer.from(second) }
+  ]);
   await expect(page.getByRole('heading', { name: 'Inspect the matches' })).toBeVisible();
   await expect(page.getByText('one.jpg', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('two.png', { exact: true }).first()).toBeVisible();
+});
+
+test('@claim:settings-transfer @claim:storage-allowlist real settings and last export stay in the documented browser storage', async ({ page }) => {
+  const fixture = zipSync({
+    'Takeout/Google Photos/settings.jpg': originalJpeg,
+    'Takeout/Google Photos/settings.jpg.json': new TextEncoder().encode(JSON.stringify({ title: 'settings.jpg', photoTakenTime: { timestamp: '1600000000' } }))
+  });
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await page.locator('#zip-input').setInputFiles({ name: 'settings.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture) });
+  await page.locator('input[name="deduplicate"]').uncheck();
+  const exportPending = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download repaired ZIP' }).click();
+  await exportPending;
+
+  const settingsPending = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export settings' }).click();
+  const settingsDownload = await settingsPending;
+  const settingsPath = await settingsDownload.path();
+  const settings = await readFile(settingsPath!, 'utf8');
+  expect(JSON.parse(settings)).toMatchObject({ version: 1, options: { deduplicate: false }, lastSession: { mediaCount: 1, matchedCount: 1, exportedCount: 1 } });
+
+  const storage = await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('takeout-tidy'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    const transaction = database.transaction('preferences', 'readonly');
+    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => { const request = transaction.objectStore('preferences').getAllKeys(); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    database.close();
+    return { databases: (await indexedDB.databases()).map((entry) => entry.name), stores: ['preferences'], keys: keys.map(String).sort(), localKeys: Object.keys(localStorage).sort() };
+  });
+  expect(storage).toEqual({ databases: ['takeout-tidy'], stores: ['preferences'], keys: ['last-session', 'options'], localKeys: [] });
+
+  await page.evaluate(async () => {
+    localStorage.clear();
+    await new Promise<void>((resolve, reject) => { const request = indexedDB.deleteDatabase('takeout-tidy'); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
+  });
+  await page.locator('#import-settings').setInputFiles({ name: 'takeout-tidy-settings.json', mimeType: 'application/json', buffer: Buffer.from(settings) });
+  await expect(page.locator('input[name="deduplicate"]')).not.toBeChecked();
+  await expect(page.getByText('Last export')).toBeVisible();
+});
+
+test('@claim:node-runtime @claim:build-output @claim:static-host-security @claim:billing-boundary build and integration contracts are explicit and testable', async () => {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { engines: { node: string } };
+  expect(packageJson.engines.node).toBe('>=20');
+
+  for (const path of [
+    'dist/index.html', 'dist/manifest.webmanifest', 'dist/sw.js', 'dist/offline.html',
+    'dist/sitemap.xml', 'dist/robots.txt', 'dist/assets/icon-192.png',
+    'dist/assets/icon-512.png', 'dist/assets/icon-maskable-512.png',
+    'dist/assets/apple-touch-icon.png', 'dist/assets/social-preview.jpg',
+    'dist/staticwebapp.config.json'
+  ]) expect((await stat(path)).isFile(), path).toBe(true);
+
+  const staticConfig = JSON.parse(await readFile('dist/staticwebapp.config.json', 'utf8')) as {
+    globalHeaders: Record<string, string>;
+    mimeTypes: Record<string, string>;
+    routes: Array<{ route: string; rewrite?: string; headers?: Record<string, string> }>;
+    responseOverrides: Record<string, { rewrite: string }>;
+  };
+  expect(staticConfig.globalHeaders['Content-Security-Policy']).toContain("default-src 'self'");
+  expect(staticConfig.globalHeaders['X-Frame-Options']).toBe('DENY');
+  expect(staticConfig.globalHeaders['Permissions-Policy']).toContain('camera=()');
+  expect(staticConfig.mimeTypes['.webmanifest']).toBe('application/manifest+json');
+  for (const route of ['/demo', '/demo/', '/privacy', '/privacy/', '/terms', '/terms/']) {
+    expect(staticConfig.routes.find((entry) => entry.route === route)?.rewrite, route).toBe('/index.html');
+  }
+  expect(staticConfig.routes.find((route) => route.route === '/sw.js')?.headers?.['Cache-Control']).toBe('no-store');
+  expect(staticConfig.routes.find((route) => route.route === '/manifest.webmanifest')?.headers?.['Cache-Control']).toBe('no-store');
+  expect(staticConfig.routes.some((route) => route.headers?.['Cache-Control']?.includes('immutable'))).toBe(true);
+  expect(staticConfig.responseOverrides['404'].rewrite).toBe('/index.html');
+
+  const licenseSource = await readFile('src/license.ts', 'utf8');
+  expect(licenseSource).toContain('https://api.sociobot.in/api/v1/licenses/verify');
+  expect(licenseSource).toContain('https://sociobot.in/buy?product=takeout-photo-metadata-fixer');
+  const bundle = (await Promise.all((await readdir('dist/assets')).filter((name) => name.endsWith('.js')).map((name) => readFile(`dist/assets/${name}`, 'utf8')))).join('\n').toLowerCase();
+  for (const provider of ['stripe', 'dodo', 'paddle', 'braintree', 'adyen']) expect(bundle).not.toContain(provider);
 });

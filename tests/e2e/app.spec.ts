@@ -72,6 +72,20 @@ test('home page exposes the complete starting workflow', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('390 px first screen names the job, audience, actions, and three facts without overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Repair your Google Photos Takeout' })).toBeVisible();
+  await expect(page.getByText('For people leaving Google Photos, restore dates and locations, remove exact copies, and rename files on this device.')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Try it with sample data/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Choose your Takeout files' })).toBeVisible();
+  await expect(page.locator('.hero-facts li')).toHaveCount(3);
+  const facts = await page.locator('.hero-facts').boundingBox();
+  expect(facts).not.toBeNull();
+  expect(facts!.y + facts!.height).toBeLessThanOrEqual(844);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
 test('has no serious accessibility violations', async ({ page }) => {
   for (const path of ['/', '/demo', '/privacy/', '/terms/', '/missing-page']) {
     await page.goto(path);
@@ -174,6 +188,8 @@ test('legal and offline pages load without console errors', async ({ page }) => 
   for (const path of ['/privacy/', '/terms/', '/offline.html']) {
     await page.goto(path);
     await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(245, 235, 216)');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', /Georgia/);
   }
   expect(errors).toEqual([]);
 });
@@ -181,9 +197,24 @@ test('legal and offline pages load without console errors', async ({ page }) => 
 test('file filters and chooser controls meet the touch target minimum', async ({ page }) => {
   await page.goto('/demo');
   for (const button of await page.locator('.filter').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  for (const button of await page.locator('.demo-banner button').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await page.goto('/');
   await expect(page.locator('#drop-action')).toBeVisible();
   expect((await page.locator('#drop-action').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+});
+
+test('drop action opens the ZIP picker by pointer, Enter, and Space', async ({ page }) => {
+  await page.goto('/');
+  const action = page.locator('#drop-action');
+  for (const activate of [
+    () => action.click(),
+    async () => { await action.focus(); await page.keyboard.press('Enter'); },
+    async () => { await action.focus(); await page.keyboard.press('Space'); }
+  ]) {
+    const chooser = page.waitForEvent('filechooser');
+    await activate();
+    await chooser;
+  }
 });
 
 test('publishes a real sitemap and social assets', async ({ request }) => {

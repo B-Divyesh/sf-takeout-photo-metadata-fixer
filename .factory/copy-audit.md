@@ -1,6 +1,6 @@
 # Copy audit
 
-Audited: 2026-08-28. Counts treat hyphenated terms, filenames, and numbers as one word. No line exceeds 22 words or uses a banned marketing word.
+Audited: 2026-08-28 after polish 1. Counts treat hyphenated terms, filenames, and numbers as one word. Every visitor-facing sentence in the landing, demo, legal routes, offline page, and README was checked. No sentence exceeds 22 words or uses a banned marketing word. “Unlock” appears only as the literal name of the paid file-limit removal.
 
 ## First screen
 
@@ -33,6 +33,9 @@ Audited: 2026-08-28. Counts treat hyphenated terms, filenames, and numbers as on
 | Nothing has been written. | 4 | Pass |
 | Review each match and choose the repaired export. | 8 | Pass |
 | The export log lists every written, skipped, and failed file. | 10 | Pass |
+| This scan has more than 20,000 files. | 7 | Pass |
+| The first 20,000 files are free. | 6 | Pass |
+| A $12 one-time license removes the limit. | 8 | Pass |
 
 ## Explanation, privacy, and price
 
@@ -56,9 +59,26 @@ Audited: 2026-08-28. Counts treat hyphenated terms, filenames, and numbers as on
 | Demo — sample data, nothing is saved | 7 | Pass |
 | Inspect a sample Google Photos Takeout | 7 | Pass |
 | This in-memory sample includes repaired photos, an exact copy, an unmatched file, and copy-only media. | 15 | Pass |
+| Sample data reset. | 3 | Pass |
 | This page is not in the archive | 7 | Pass |
 | The address does not match a Takeout Tidy page. | 9 | Pass |
 | Return to repair tool | 4 | Pass |
+
+## README and legal copy
+
+| Copy | Words | Result |
+| --- | ---: | --- |
+| Repair Google Photos Takeout dates and locations in your browser. | 10 | Pass |
+| Takeout Tidy is for people leaving Google Photos with wrong dates, repeated album copies, or separate Google JSON files. | 19 | Pass |
+| Photo, filename, and Google JSON data stay on the device during repair and export. | 14 | Pass; `local-processing` claim. |
+| The demo can reload and export offline after its first load. | 11 | Pass; `offline-reload` claim. |
+| Repair is free for up to 20,000 media files. | 9 | Pass; `free-file-limit` claim. |
+| A $12 one-time unlock removes that limit with no subscription. | 10 | Pass; `one-time-price` claim. |
+| Use Node.js 20 or newer. | 6 | Pass; `node-runtime` claim. |
+| Deploy `dist/` as a static site with address-bar fallback to `index.html`. | 11 | Pass; `build-output` claim. |
+| Demo mode uses memory and leaves real storage unchanged. | 9 | Pass; `demo-sandbox` claim. |
+| Photos, videos, ZIP files, Google JSON files, hashes, repaired files, and export logs stay in your browser. | 17 | Pass; `local-processing` claim. |
+| A license key is sent to the Sociobot API only after you choose Verify license. | 15 | Pass; specific and user-triggered. |
 
 ## Terminology
 
